@@ -1,0 +1,554 @@
+{
+  "metadata": {
+    "title": "Admin Endpoints Quick Reference",
+    "baseUrl": "https://food-delivery-digontom.onrender.com/api",
+    "localUrl": "http://localhost:8080/api",
+    "totalEndpoints": 54,
+    "authType": "Bearer JWT",
+    "authHeader": "Authorization: Bearer {{adminToken}}"
+  },
+  "modules": {
+    "account": {
+      "name": "Account Management",
+      "count": 6,
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/admin/account/profile",
+          "name": "Get Account Profile",
+          "requestBody": null,
+          "responseType": "AdminProfileResponse"
+        },
+        {
+          "method": "PUT",
+          "path": "/admin/account/email",
+          "name": "Update Email",
+          "requestBody": "UpdateEmailRequest",
+          "responseType": "AdminProfileResponse"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/account/email/otp",
+          "name": "Send Email OTP",
+          "requestBody": "SendEmailOtpRequest",
+          "responseType": "Void"
+        },
+        {
+          "method": "PUT",
+          "path": "/admin/account/password",
+          "name": "Update Password",
+          "requestBody": "UpdatePasswordRequest",
+          "responseType": "Void"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/account/password/otp",
+          "name": "Send Password OTP",
+          "requestBody": "SendPasswordOtpRequest",
+          "responseType": "Void"
+        },
+        {
+          "method": "PUT",
+          "path": "/admin/account/phone",
+          "name": "Update Phone",
+          "requestBody": "UpdatePhoneRequest",
+          "responseType": "AdminProfileResponse"
+        }
+      ]
+    },
+    "profile": {
+      "name": "Profile & Settings",
+      "count": 2,
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/admin/profile",
+          "name": "Get Profile",
+          "queryParams": [],
+          "responseType": "AdminProfileResponse"
+        },
+        {
+          "method": "PUT",
+          "path": "/admin/profile",
+          "name": "Update Profile",
+          "requestBody": "AdminProfileUpdateRequest",
+          "responseType": "AdminProfileResponse"
+        }
+      ]
+    },
+    "banners": {
+      "name": "Banners",
+      "count": 5,
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/admin/banners/",
+          "name": "List Banners",
+          "queryParams": ["page", "perPage"],
+          "responseType": "PageResponse<BannerResponse>"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/banners/",
+          "name": "Create Banner",
+          "requestBody": "BannerRequest",
+          "responseType": "BannerResponse"
+        },
+        {
+          "method": "PUT",
+          "path": "/admin/banners/{id}",
+          "name": "Update Banner",
+          "pathParams": ["id"],
+          "requestBody": "BannerRequest",
+          "responseType": "BannerResponse"
+        },
+        {
+          "method": "DELETE",
+          "path": "/admin/banners/{id}",
+          "name": "Delete Banner",
+          "pathParams": ["id"],
+          "responseType": "Void"
+        },
+        {
+          "method": "PATCH",
+          "path": "/admin/banners/{id}/status",
+          "name": "Update Banner Status",
+          "pathParams": ["id"],
+          "requestBody": "BannerStatusRequest",
+          "responseType": "BannerResponse"
+        }
+      ]
+    },
+    "dashboard": {
+      "name": "Dashboard & Analytics",
+      "count": 2,
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/admin/dashboard",
+          "name": "Get Admin Dashboard",
+          "responseType": "AdminDashboardResponse",
+          "dataFields": [
+            "totalUsers",
+            "totalCustomers",
+            "totalSellers",
+            "totalDrivers",
+            "totalRestaurants",
+            "totalOrders",
+            "deliveredOrders",
+            "totalRevenue",
+            "totalPlatformFee",
+            "codCollected",
+            "onlinePaid",
+            "driverCashPending",
+            "restaurantPayable",
+            "adminCommission",
+            "cashLimitBlockedDrivers"
+          ]
+        },
+        {
+          "method": "GET",
+          "path": "/admin/mr-breado/dashboard",
+          "name": "Get Mr. Breado Dashboard",
+          "responseType": "AdminMrBreadoDashboardResponse"
+        }
+      ]
+    },
+    "drivers": {
+      "name": "Driver Management",
+      "count": 3,
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/admin/drivers/cash",
+          "name": "Get Driver Cash Records",
+          "queryParams": ["page", "perPage", "search"],
+          "responseType": "PageResponse<AdminDriverCashResponse>"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/drivers/{driverId}/cash-deposit/verify",
+          "name": "Verify Driver Cash Deposit",
+          "pathParams": ["driverId"],
+          "requestBody": "AdminDriverCashDepositRequest",
+          "responseType": "AdminDriverCashResponse"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/drivers/{driverId}/cash-transactions",
+          "name": "Get Driver Transactions",
+          "pathParams": ["driverId"],
+          "queryParams": ["page", "perPage"],
+          "responseType": "PageResponse<DeliveryCashTransactionResponse>"
+        }
+      ]
+    },
+    "mrBreado": {
+      "name": "Mr. Breado Operations",
+      "count": 14,
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/admin/mr-breado/orders",
+          "name": "List Orders",
+          "queryParams": ["page", "perPage", "status"],
+          "responseType": "PageResponse<SellerOrderResponse>"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/mr-breado/orders/{orderId}",
+          "name": "Get Order Details",
+          "pathParams": ["orderId"],
+          "responseType": "SellerOrderDetailResponse"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/mr-breado/orders/{orderId}/accept",
+          "name": "Accept Order",
+          "pathParams": ["orderId"],
+          "responseType": "SellerOrderDetailResponse"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/mr-breado/orders/{orderId}/preparing",
+          "name": "Mark Preparing",
+          "pathParams": ["orderId"],
+          "responseType": "SellerOrderDetailResponse"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/mr-breado/orders/{orderId}/ready",
+          "name": "Mark Ready",
+          "pathParams": ["orderId"],
+          "responseType": "SellerOrderDetailResponse"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/mr-breado/orders/{orderId}/reject",
+          "name": "Reject Order",
+          "pathParams": ["orderId"],
+          "requestBody": "SellerOrderRejectRequest",
+          "responseType": "SellerOrderDetailResponse"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/mr-breado/payments",
+          "name": "Get Payments Summary",
+          "responseType": "AdminMrBreadoPaymentsResponse"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/mr-breado/products",
+          "name": "List Products",
+          "queryParams": ["page", "perPage"],
+          "responseType": "PageResponse<ProductResponse>"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/mr-breado/products",
+          "name": "Create Product",
+          "requestType": "multipart/form-data",
+          "requestBody": "AdminMrBreadoProductRequest",
+          "responseType": "ProductResponse"
+        },
+        {
+          "method": "PUT",
+          "path": "/admin/mr-breado/products/{productId}",
+          "name": "Update Product",
+          "pathParams": ["productId"],
+          "requestType": "multipart/form-data",
+          "requestBody": "AdminMrBreadoProductRequest",
+          "responseType": "ProductResponse"
+        },
+        {
+          "method": "DELETE",
+          "path": "/admin/mr-breado/products/{productId}",
+          "name": "Delete Product",
+          "pathParams": ["productId"],
+          "responseType": "Void"
+        },
+        {
+          "method": "PATCH",
+          "path": "/admin/mr-breado/products/{productId}/availability",
+          "name": "Update Product Availability",
+          "pathParams": ["productId"],
+          "requestBody": "AdminProductAvailabilityRequest",
+          "responseType": "ProductResponse"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/mr-breado/restaurant",
+          "name": "Get Restaurant Details",
+          "responseType": "AdminRestaurantResponse"
+        },
+        {
+          "method": "PATCH",
+          "path": "/admin/mr-breado/restaurant/status",
+          "name": "Update Restaurant Status",
+          "requestBody": "AdminRestaurantStatusRequest",
+          "responseType": "AdminRestaurantResponse"
+        }
+      ]
+    },
+    "restaurants": {
+      "name": "Restaurants",
+      "count": 1,
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/admin/restaurants",
+          "name": "List Restaurants",
+          "queryParams": ["page", "perPage", "search", "verificationStatus"],
+          "responseType": "PageResponse<AdminRestaurantResponse>"
+        }
+      ]
+    },
+    "settlements": {
+      "name": "Restaurant Settlements",
+      "count": 3,
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/admin/restaurant-settlements",
+          "name": "List Settlements",
+          "queryParams": ["page", "perPage"],
+          "responseType": "PageResponse<AdminRestaurantPayoutResponse>"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/restaurant-settlements/{restaurantId}/generate-weekly",
+          "name": "Generate Weekly Settlement",
+          "pathParams": ["restaurantId"],
+          "responseType": "AdminRestaurantPayoutResponse"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/restaurant-settlements/{settlementId}/mark-paid",
+          "name": "Mark Settlement Paid",
+          "pathParams": ["settlementId"],
+          "requestBody": "AdminRestaurantPayoutPaidRequest",
+          "responseType": "AdminRestaurantPayoutResponse"
+        }
+      ]
+    },
+    "users": {
+      "name": "Users",
+      "count": 1,
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/admin/users",
+          "name": "List Users",
+          "queryParams": ["page", "perPage", "role", "search"],
+          "responseType": "PageResponse<AdminUserResponse>"
+        }
+      ]
+    },
+    "payments": {
+      "name": "Payments & Ledger",
+      "count": 3,
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/admin/payment-ledger",
+          "name": "Get Payment Ledger",
+          "queryParams": ["page", "perPage", "type"],
+          "responseType": "PageResponse<PaymentLedgerEntryResponse>"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/payment-settings/",
+          "name": "Get Payment Settings",
+          "responseType": "AdminPaymentSettingsResponse"
+        },
+        {
+          "method": "PUT",
+          "path": "/admin/payment-settings/",
+          "name": "Update Payment Settings",
+          "requestBody": "AdminPaymentSettingsRequest",
+          "responseType": "AdminPaymentSettingsResponse"
+        }
+      ]
+    },
+    "coupons": {
+      "name": "Coupons",
+      "count": 5,
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/admin/coupons/",
+          "name": "List Coupons",
+          "queryParams": ["page", "perPage"],
+          "responseType": "PageResponse<Coupon>"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/coupons/",
+          "name": "Create Coupon",
+          "requestBody": "AdminCouponRequest",
+          "responseType": "Coupon"
+        },
+        {
+          "method": "PUT",
+          "path": "/admin/coupons/{couponId}",
+          "name": "Update Coupon",
+          "pathParams": ["couponId"],
+          "requestBody": "AdminCouponRequest",
+          "responseType": "Coupon"
+        },
+        {
+          "method": "DELETE",
+          "path": "/admin/coupons/{couponId}",
+          "name": "Delete Coupon",
+          "pathParams": ["couponId"],
+          "responseType": "Void"
+        },
+        {
+          "method": "PATCH",
+          "path": "/admin/coupons/{couponId}/status",
+          "name": "Update Coupon Status",
+          "pathParams": ["couponId"],
+          "requestBody": "AdminCouponStatusRequest",
+          "responseType": "Coupon"
+        }
+      ]
+    },
+    "offers": {
+      "name": "Offers",
+      "count": 5,
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/admin/offers/",
+          "name": "List Offers",
+          "queryParams": ["page", "perPage"],
+          "responseType": "Object"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/offers/",
+          "name": "Create Offer",
+          "requestBody": "OfferRequest",
+          "responseType": "Object"
+        },
+        {
+          "method": "PUT",
+          "path": "/admin/offers/{id}",
+          "name": "Update Offer",
+          "pathParams": ["id"],
+          "requestBody": "OfferRequest",
+          "responseType": "Object"
+        },
+        {
+          "method": "DELETE",
+          "path": "/admin/offers/{id}",
+          "name": "Delete Offer",
+          "pathParams": ["id"],
+          "responseType": "Object"
+        },
+        {
+          "method": "PATCH",
+          "path": "/admin/offers/{id}/status",
+          "name": "Update Offer Status",
+          "pathParams": ["id"],
+          "responseType": "Object"
+        }
+      ]
+    },
+    "reviews": {
+      "name": "Reviews",
+      "count": 1,
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/admin/reviews",
+          "name": "List Reviews",
+          "queryParams": ["page", "perPage"],
+          "responseType": "PageResponse<OrderReviewResponse>"
+        }
+      ]
+    },
+    "messaging": {
+      "name": "Messaging",
+      "count": 2,
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/admin/seller-messages",
+          "name": "List Seller Messages",
+          "queryParams": ["page", "perPage"],
+          "responseType": "PageResponse<AdminSellerMessageResponse>"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/seller-messages",
+          "name": "Send Seller Message",
+          "requestBody": "AdminSellerMessageRequest",
+          "responseType": "AdminSellerMessageResponse"
+        }
+      ]
+    },
+    "payoutAccounts": {
+      "name": "Seller Payout Accounts",
+      "count": 2,
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/admin/seller-payout-accounts",
+          "name": "List Payout Accounts",
+          "queryParams": ["page", "perPage", "verified"],
+          "responseType": "PageResponse<SellerPayoutAccountResponse>"
+        },
+        {
+          "method": "PATCH",
+          "path": "/admin/seller-payout-accounts/{accountId}/verify",
+          "name": "Verify Payout Account",
+          "pathParams": ["accountId"],
+          "requestBody": "AdminSellerPayoutVerifyRequest",
+          "responseType": "SellerPayoutAccountResponse"
+        }
+      ]
+    },
+    "reports": {
+      "name": "Reports",
+      "count": 2,
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/admin/restaurant-reports",
+          "name": "List Restaurant Reports",
+          "queryParams": ["page", "perPage", "status"],
+          "responseType": "PageResponse<RestaurantReportResponse>"
+        },
+        {
+          "method": "PATCH",
+          "path": "/admin/restaurant-reports/{reportId}/status",
+          "name": "Update Report Status",
+          "pathParams": ["reportId"],
+          "requestBody": "AdminReportStatusRequest",
+          "responseType": "RestaurantReportResponse"
+        }
+      ]
+    },
+    "storage": {
+      "name": "Storage",
+      "count": 1,
+      "endpoints": [
+        {
+          "method": "POST",
+          "path": "/admin/uploads/offer-image",
+          "name": "Upload Offer Image",
+          "requestType": "multipart/form-data",
+          "responseType": "Object"
+        }
+      ]
+    }
+  },
+  "commonEnums": {
+    "orderStatus": ["PENDING", "ACCEPTED", "PREPARING", "READY", "REJECTED", "CANCELLED"],
+    "paymentStatus": ["PENDING", "PAID", "FAILED", "REFUNDED"],
+    "verificationStatus": ["PENDING", "APPROVED", "REJECTED"],
+    "userRole": ["USER", "SELLER", "DRIVER", "ADMIN"],
+    "reportStatus": ["PENDING", "RESOLVED", "REJECTED"]
+  }
+}
