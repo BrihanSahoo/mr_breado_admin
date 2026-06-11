@@ -52,6 +52,8 @@ function asArray(data: any): any[] {
   if (Array.isArray(data?.requests)) return data.requests;
   if (Array.isArray(data?.data)) return data.data;
   if (Array.isArray(data?.records)) return data.records;
+  if (Array.isArray(data?.payload)) return data.payload;
+  if (Array.isArray(data?.result)) return data.result;
   return [];
 }
 
@@ -72,20 +74,30 @@ function normalizeDocuments(raw: any): VerificationDocument[] {
 }
 
 function normalizeRequest(raw: any, source: VerificationRequest["source"]): VerificationRequest {
-  const entityType = raw?.entityType ?? raw?.requestType ?? (source === "RIDER" ? "RIDER" : source === "RESTAURANT" ? "RESTAURANT" : undefined);
+  const entityType = String(
+    raw?.entityType ?? raw?.entity_type ?? raw?.targetType ?? raw?.target_type ?? raw?.requestType ?? raw?.request_type ??
+      (source === "RIDER" ? "RIDER" : source === "RESTAURANT" ? "RESTAURANT" : "")
+  ).toUpperCase();
+
+  const targetId = raw?.targetId ?? raw?.target_id;
+  const requestId = raw?.id ?? raw?.requestId ?? raw?.request_id;
+
   return {
     ...raw,
-    id: raw?.id ?? raw?.requestId ?? raw?.profileId ?? raw?.restaurantId ?? raw?.driverId,
+    id: requestId ?? raw?.profileId ?? raw?.profile_id ?? raw?.restaurantId ?? raw?.restaurant_id ?? raw?.driverId ?? raw?.driver_id ?? targetId,
     entityType,
-    requestType: raw?.requestType ?? entityType,
-    restaurantId: raw?.restaurantId ?? raw?.id,
-    riderId: raw?.riderId ?? raw?.driverId ?? raw?.profileId,
-    applicantName: raw?.applicantName ?? raw?.ownerName ?? raw?.driverName ?? raw?.riderName ?? raw?.name,
-    businessName: raw?.businessName ?? raw?.restaurantName ?? raw?.name,
-    contactMobile: raw?.contactMobile ?? raw?.mobile ?? raw?.driverMobile ?? raw?.phoneNumber,
-    status: raw?.status ?? raw?.verificationStatus ?? "PENDING",
+    requestType: raw?.requestType ?? raw?.request_type ?? entityType,
+    restaurantId: raw?.restaurantId ?? raw?.restaurant_id ?? (entityType.includes("RESTAURANT") ? targetId : undefined),
+    riderId: raw?.riderId ?? raw?.rider_id ?? raw?.driverId ?? raw?.driver_id ?? raw?.profileId ?? raw?.profile_id ?? (entityType.includes("RIDER") || entityType.includes("DRIVER") ? targetId : undefined),
+    applicantName: raw?.applicantName ?? raw?.applicant_name ?? raw?.ownerName ?? raw?.owner_name ?? raw?.driverName ?? raw?.driver_name ?? raw?.riderName ?? raw?.rider_name ?? raw?.name,
+    businessName: raw?.businessName ?? raw?.business_name ?? raw?.restaurantName ?? raw?.restaurant_name ?? raw?.name,
+    contactMobile: raw?.contactMobile ?? raw?.contact_mobile ?? raw?.mobile ?? raw?.driverMobile ?? raw?.driver_mobile ?? raw?.phoneNumber ?? raw?.phone_number,
+    status: raw?.status ?? raw?.verificationStatus ?? raw?.verification_status ?? "PENDING",
+    note: raw?.note ?? raw?.applicantNote ?? raw?.applicant_note,
+    createdAt: raw?.createdAt ?? raw?.created_at,
+    updatedAt: raw?.updatedAt ?? raw?.updated_at,
     documents: normalizeDocuments(raw),
-    source,
+    source: entityType.includes("RESTAURANT") ? "RESTAURANT" : entityType.includes("RIDER") || entityType.includes("DRIVER") ? "RIDER" : source,
   };
 }
 
@@ -108,7 +120,7 @@ export const serviceAreaVerificationService = {
     const calls: Promise<VerificationRequest[]>[] = [];
 
     if (!type || type === "ALL") {
-      calls.push(api.get(endpoints.admin.verifications, { params: { status: status || undefined, _t: Date.now() } })
+      calls.push(api.get(endpoints.admin.verifications, { params: { status: status || undefined, targetType: type && type !== "ALL" ? type : undefined, target_type: type && type !== "ALL" ? type : undefined, _t: Date.now() } })
         .then((res) => asArray(unwrap<any>(res)).map((x) => normalizeRequest(x, "GENERAL")))
         .catch(() => []));
     }
