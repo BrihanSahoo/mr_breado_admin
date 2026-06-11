@@ -1,10 +1,10 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   LayoutDashboard, ShoppingBag, Users, Store, UserCog, Bike, Utensils, ChefHat,
   Soup, Layers, Shield, KeyRound, Tag, Gift, LifeBuoy, Ticket, CreditCard,
   MapPin, Wallet, Image as ImageIcon, Settings, LogOut, Bell, Search, Menu, ChevronDown,
-  ChevronRight, Globe, Activity, Building2, MessageSquare, UserCircle, ShieldCheck,
+  ChevronRight, Globe, Activity, Building2, MessageSquare, UserCircle, ShieldCheck, Palette, Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -54,6 +54,7 @@ const NAV: { section?: string; items: Item[] }[] = [
   { section: "SUPPORT MANAGEMENT", items: [
     { label: "Support Dashboard", to: "/support", icon: LifeBuoy },
     { label: "Support Tickets", to: "/tickets", icon: Ticket },
+    { label: "Notifications", to: "/notifications", icon: Bell },
   ]},
   { section: "SUBSCRIPTION MANAGEMENT", items: [
     { label: "Subscriptions", to: "/subscriptions", icon: CreditCard },
@@ -86,7 +87,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
-      <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-5">
+      <div className="flex h-[72px] items-center gap-3 border-b border-sidebar-border px-5">
         <img src={ADMIN_LOGO_URL} alt="Mr Breado" className="h-10 w-10 rounded-xl object-contain" />
         <span className="text-lg font-semibold tracking-tight">Mr Breado</span>
       </div>
@@ -115,7 +116,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                       onClick={() => setOpen(o => ({ ...o, [item.label]: !o[item.label] }))}
                       className={cn(
                         "group flex w-full items-center gap-3 rounded-md px-3 py-2 transition-colors",
-                        active ? "bg-primary/10 text-primary" : "hover:bg-sidebar-accent"
+                        active ? "bg-primary/15 text-primary shadow-[inset_3px_0_0_var(--primary)]" : "hover:bg-sidebar-accent"
                       )}
                     >
                       {Icon && <Icon className="h-4 w-4" />}
@@ -142,7 +143,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                 <Link key={item.label} to={item.to!} onClick={onNavigate}
                   className={cn(
                     "flex items-center gap-3 rounded-md px-3 py-2 transition-colors",
-                    active ? "bg-primary/10 text-primary" : "hover:bg-sidebar-accent"
+                    active ? "bg-primary/15 text-primary shadow-[inset_3px_0_0_var(--primary)]" : "hover:bg-sidebar-accent"
                   )}
                 >
                   {Icon && <Icon className="h-4 w-4" />}
@@ -157,6 +158,28 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <LogoutButton />
       </div>
     </div>
+  );
+}
+
+function ThemeSwitcher() {
+  const [theme, setTheme] = useState(() => localStorage.getItem("admin-theme") || "luxury");
+  useEffect(() => {
+    document.documentElement.classList.remove("theme-dark", "theme-light", "theme-luxury");
+    document.documentElement.classList.add(`theme-${theme}`);
+    localStorage.setItem("admin-theme", theme);
+  }, [theme]);
+
+  return (
+    <select
+      value={theme}
+      onChange={(e) => setTheme(e.target.value)}
+      className="rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold outline-none hover:bg-accent"
+      title="Theme"
+    >
+      <option value="dark">Dark</option>
+      <option value="light">Light</option>
+      <option value="luxury">Luxury</option>
+    </select>
   );
 }
 
@@ -182,11 +205,11 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background text-foreground">
-      <aside className="hidden w-64 shrink-0 border-r border-sidebar-border lg:block">
+      <aside className="hidden w-[285px] shrink-0 border-r border-sidebar-border bg-sidebar shadow-card lg:block">
         <SidebarContent />
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border bg-card/40 px-4 backdrop-blur">
+        <header className="flex h-[72px] shrink-0 items-center gap-3 border-b border-border bg-card/50 px-4 backdrop-blur-xl">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <button className="rounded-md p-2 hover:bg-accent lg:hidden"><Menu className="h-5 w-5" /></button>
@@ -196,23 +219,27 @@ export function AdminLayout({ children }: { children: ReactNode }) {
             </SheetContent>
           </Sheet>
           <div className="flex-1" />
-          <button className="relative rounded-md p-2 hover:bg-accent">
+          <Link to="/notifications" className="relative rounded-xl border border-transparent p-2 text-primary transition hover:border-primary/30 hover:bg-primary/10" title="Open notifications">
             <Bell className="h-5 w-5" />
-            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary" />
-          </button>
-          <button className="hidden items-center gap-2 rounded-md border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent sm:flex">
+            <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-primary shadow-glow" />
+          </Link>
+          <div className="hidden items-center gap-2 rounded-xl border border-border bg-card px-2 py-1 text-sm md:flex">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <ThemeSwitcher />
+          </div>
+          <button className="hidden items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold hover:bg-accent sm:flex">
             <Globe className="h-4 w-4" /> English <ChevronDown className="h-3.5 w-3.5" />
           </button>
-          <div className="flex items-center gap-2 rounded-md border border-border bg-card px-2 py-1 pr-3">
-            <img src={ADMIN_LOGO_URL} alt="Admin" className="h-8 w-8 rounded-full object-contain" />
+          <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-2 py-1.5 pr-3 shadow-card">
+            <img src={ADMIN_LOGO_URL} alt="Admin" className="h-9 w-9 rounded-full object-contain" />
             <div className="hidden text-xs leading-tight sm:block">
               <div className="text-muted-foreground">Hello</div>
-              <div className="font-medium">Mr Breado Admin</div>
+              <div className="font-semibold">Mr Breado Admin</div>
             </div>
           </div>
         </header>
         <main className="min-w-0 flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-[1600px] p-4 md:p-6">
+          <div className="mx-auto w-full max-w-[1680px] p-4 md:p-7">
             {children}
           </div>
         </main>

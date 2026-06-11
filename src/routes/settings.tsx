@@ -54,6 +54,9 @@ const platformDefaults = {
   businessAddress: "",
   businessLatitude: "",
   businessLongitude: "",
+  googleMapsApiKey: "",
+  googleMapsApiKeyConfigured: false,
+  googleDistanceEnabled: false,
 };
 
 function SettingsPage() {
@@ -143,6 +146,9 @@ function PaymentAndTakeawaySettings() {
       businessAddress: data.businessAddress ?? "",
       businessLatitude: data.businessLatitude ?? "",
       businessLongitude: data.businessLongitude ?? "",
+      googleMapsApiKey: "",
+      googleMapsApiKeyConfigured: data.googleMapsApiKeyConfigured ?? false,
+      googleDistanceEnabled: data.googleDistanceEnabled ?? false,
     });
   }, [data]);
 
@@ -169,6 +175,8 @@ function PaymentAndTakeawaySettings() {
     businessAddress: optionalText(form.businessAddress),
     businessLatitude: optionalNumber(form.businessLatitude),
     businessLongitude: optionalNumber(form.businessLongitude),
+    googleMapsApiKey: optionalText(form.googleMapsApiKey),
+    googleDistanceEnabled: Boolean(form.googleDistanceEnabled),
   });
 
   const onSave = () => {
@@ -223,6 +231,14 @@ function PaymentAndTakeawaySettings() {
         <Field label="Maximum Delivery Charge (₹)" type="number" value={form.maximumDeliveryCharge ?? ""} onChange={(v)=>numberSet("maximumDeliveryCharge",v)} />
         <Field label="Rider Pay / KM (₹)" type="number" value={form.riderDeliveryPayPerKm ?? ""} onChange={(v)=>numberSet("riderDeliveryPayPerKm",v)} />
         <Field label="Minimum Rider Pay (₹)" type="number" value={form.minimumRiderDeliveryPay ?? ""} onChange={(v)=>numberSet("minimumRiderDeliveryPay",v)} />
+      </Gateway>
+
+      <Gateway title="Google Maps Distance API">
+        <Toggle label="Use Google distance calculation when key is configured" value={!!form.googleDistanceEnabled} onChange={(v)=>set("googleDistanceEnabled",v)}/>
+        <Field label="Google Maps API Key" value={form.googleMapsApiKey ?? ""} onChange={(v)=>set("googleMapsApiKey",v)} placeholder={form.googleMapsApiKeyConfigured ? "Key already configured. Leave blank to keep existing." : "AIza..."} />
+        <div className="rounded-xl border border-border bg-background p-3 text-xs leading-5 text-muted-foreground md:col-span-2 xl:col-span-3">
+          The key is stored only on the backend. Customer apps receive calculated distance and delivery charge, never the API key. If Google distance fails, backend should fall back to safe haversine calculation and return a clear distance-unavailable message when needed.
+        </div>
       </Gateway>
 
       <Gateway title="Business Support Details">

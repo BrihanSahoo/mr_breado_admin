@@ -120,16 +120,32 @@ export const serviceAreaVerificationService = {
     const calls: Promise<VerificationRequest[]>[] = [];
 
     if (!type || type === "ALL") {
-      calls.push(api.get(endpoints.admin.verifications, { params: { status: status || undefined, targetType: type && type !== "ALL" ? type : undefined, target_type: type && type !== "ALL" ? type : undefined, _t: Date.now() } })
+      const params = { status: status || undefined, targetType: undefined, target_type: undefined, _t: Date.now() };
+      calls.push(api.get(endpoints.admin.verifications, { params })
+        .then((res) => asArray(unwrap<any>(res)).map((x) => normalizeRequest(x, "GENERAL")))
+        .catch(() => []));
+      calls.push(api.get(endpoints.admin.verificationsAll, { params })
+        .then((res) => asArray(unwrap<any>(res)).map((x) => normalizeRequest(x, "GENERAL")))
+        .catch(() => []));
+      calls.push(api.get(endpoints.admin.verificationRequestsAlias, { params })
+        .then((res) => asArray(unwrap<any>(res)).map((x) => normalizeRequest(x, "GENERAL")))
+        .catch(() => []));
+      calls.push(api.get(endpoints.admin.serviceAreaVerificationsAlias, { params })
         .then((res) => asArray(unwrap<any>(res)).map((x) => normalizeRequest(x, "GENERAL")))
         .catch(() => []));
     }
     if (!type || type === "ALL" || type === "RESTAURANT") {
+      calls.push(api.get(endpoints.admin.verifications, { params: { status: status || undefined, targetType: "RESTAURANT", target_type: "RESTAURANT", _t: Date.now() } })
+        .then((res) => asArray(unwrap<any>(res)).map((x) => normalizeRequest(x, "RESTAURANT")))
+        .catch(() => []));
       calls.push(api.get(endpoints.admin.restaurantJoinRequests, { params: { status: status || undefined, _t: Date.now() } })
         .then((res) => asArray(unwrap<any>(res)).map((x) => normalizeRequest(x, "RESTAURANT")))
         .catch(() => []));
     }
     if (!type || type === "ALL" || type === "RIDER") {
+      calls.push(api.get(endpoints.admin.verifications, { params: { status: status || undefined, targetType: "RIDER", target_type: "RIDER", _t: Date.now() } })
+        .then((res) => asArray(unwrap<any>(res)).map((x) => normalizeRequest(x, "RIDER")))
+        .catch(() => []));
       calls.push(api.get(endpoints.admin.driverVerificationRequests, { params: { status: status || undefined, _t: Date.now() } })
         .then((res) => asArray(unwrap<any>(res)).map((x) => normalizeRequest(x, "RIDER")))
         .catch(() => []));
@@ -138,7 +154,7 @@ export const serviceAreaVerificationService = {
     const merged = (await Promise.all(calls)).flat();
     const unique = new Map<string, VerificationRequest>();
     merged.forEach((x) => {
-      const key = `${x.source}-${x.id}-${x.entityType}`;
+      const key = `request-${x.id ?? ""}-${x.entityType ?? x.requestType ?? ""}`;
       if (x.id !== undefined && x.id !== null) unique.set(key, x);
     });
     return filterStatus(Array.from(unique.values()), status);

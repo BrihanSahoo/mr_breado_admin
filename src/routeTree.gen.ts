@@ -24,6 +24,7 @@ import { Route as PayoutsRouteImport } from './routes/payouts'
 import { Route as OwnersRouteImport } from './routes/owners'
 import { Route as OperationsRouteImport } from './routes/operations'
 import { Route as OffersRouteImport } from './routes/offers'
+import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as MrBreadoRestaurantRouteImport } from './routes/mr-breado-restaurant'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as FoodsRouteImport } from './routes/foods'
@@ -120,6 +121,11 @@ const OperationsRoute = OperationsRouteImport.update({
 const OffersRoute = OffersRouteImport.update({
   id: '/offers',
   path: '/offers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MrBreadoRestaurantRoute = MrBreadoRestaurantRouteImport.update({
@@ -242,6 +248,7 @@ export interface FileRoutesByFullPath {
   '/foods': typeof FoodsRoute
   '/login': typeof LoginRoute
   '/mr-breado-restaurant': typeof MrBreadoRestaurantRoute
+  '/notifications': typeof NotificationsRoute
   '/offers': typeof OffersRoute
   '/operations': typeof OperationsRoute
   '/owners': typeof OwnersRoute
@@ -280,6 +287,7 @@ export interface FileRoutesByTo {
   '/foods': typeof FoodsRoute
   '/login': typeof LoginRoute
   '/mr-breado-restaurant': typeof MrBreadoRestaurantRoute
+  '/notifications': typeof NotificationsRoute
   '/offers': typeof OffersRoute
   '/operations': typeof OperationsRoute
   '/owners': typeof OwnersRoute
@@ -319,6 +327,7 @@ export interface FileRoutesById {
   '/foods': typeof FoodsRoute
   '/login': typeof LoginRoute
   '/mr-breado-restaurant': typeof MrBreadoRestaurantRoute
+  '/notifications': typeof NotificationsRoute
   '/offers': typeof OffersRoute
   '/operations': typeof OperationsRoute
   '/owners': typeof OwnersRoute
@@ -359,6 +368,7 @@ export interface FileRouteTypes {
     | '/foods'
     | '/login'
     | '/mr-breado-restaurant'
+    | '/notifications'
     | '/offers'
     | '/operations'
     | '/owners'
@@ -397,6 +407,7 @@ export interface FileRouteTypes {
     | '/foods'
     | '/login'
     | '/mr-breado-restaurant'
+    | '/notifications'
     | '/offers'
     | '/operations'
     | '/owners'
@@ -435,6 +446,7 @@ export interface FileRouteTypes {
     | '/foods'
     | '/login'
     | '/mr-breado-restaurant'
+    | '/notifications'
     | '/offers'
     | '/operations'
     | '/owners'
@@ -474,6 +486,7 @@ export interface RootRouteChildren {
   FoodsRoute: typeof FoodsRoute
   LoginRoute: typeof LoginRoute
   MrBreadoRestaurantRoute: typeof MrBreadoRestaurantRoute
+  NotificationsRoute: typeof NotificationsRoute
   OffersRoute: typeof OffersRoute
   OperationsRoute: typeof OperationsRoute
   OwnersRoute: typeof OwnersRoute
@@ -604,6 +617,13 @@ declare module '@tanstack/react-router' {
       path: '/offers'
       fullPath: '/offers'
       preLoaderRoute: typeof OffersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mr-breado-restaurant': {
@@ -770,6 +790,7 @@ const rootRouteChildren: RootRouteChildren = {
   FoodsRoute: FoodsRoute,
   LoginRoute: LoginRoute,
   MrBreadoRestaurantRoute: MrBreadoRestaurantRoute,
+  NotificationsRoute: NotificationsRoute,
   OffersRoute: OffersRoute,
   OperationsRoute: OperationsRoute,
   OwnersRoute: OwnersRoute,

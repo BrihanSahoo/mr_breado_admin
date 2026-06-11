@@ -13,8 +13,8 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const navigate = useNavigate();
   const [show, setShow] = useState(false);
-  const [email, setEmail] = useState("admin@admin.com");
-  const [password, setPassword] = useState("admin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const login = useLogin();
   const loading = login.isPending;
 
@@ -85,7 +85,7 @@ function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="h-11 w-full rounded-lg border border-border bg-card px-10 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
-                  placeholder="admin@admin.com"
+                  placeholder="Enter admin email"
                 />
               </div>
             </div>
@@ -93,7 +93,7 @@ function LoginPage() {
             <div>
               <div className="mb-1.5 flex items-center justify-between">
                 <label className="text-xs font-medium text-muted-foreground">Password</label>
-                <a href="#" className="text-xs text-primary hover:underline">Forgot password?</a>
+                <span className="text-xs text-muted-foreground">Contact platform owner for password reset</span>
               </div>
               <div className="relative">
                 <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -133,26 +133,18 @@ function LoginPage() {
 
             <div className="relative py-2 text-center">
               <span className="relative z-10 bg-background px-3 text-[11px] uppercase tracking-wider text-muted-foreground">
-                Or continue with
+                Secure admin access
               </span>
               <div className="absolute left-0 top-1/2 h-px w-full bg-border" />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <button type="button" className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-card text-sm hover:bg-accent">
-                <span className="text-base">🔍</span> Google
-              </button>
-              <button type="button" className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-card text-sm hover:bg-accent">
-                <span className="text-base"></span> Apple
-              </button>
+            <div className="rounded-xl border border-border bg-card/70 p-3 text-xs leading-5 text-muted-foreground">
+              Use only the administrator credentials created in the backend. Demo credentials are never displayed on this page.
             </div>
           </form>
 
           <p className="mt-8 text-center text-sm text-muted-foreground">
-            Don't have an account?{" "}
-            <Link to="/register" className="font-medium text-primary hover:underline">
-              Create one
-            </Link>
+            Access is restricted to approved Mr Breado administrators.
           </p>
         </div>
       </div>

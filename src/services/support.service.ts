@@ -38,6 +38,7 @@ export const supportService = {
   }),
   detail: (id: number | string) => request<SupportTicketResponse>({ url: endpoints.admin.supportTicketById(id), method: "GET" }),
   accept: (id: number | string) => request<SupportTicketResponse>({ url: endpoints.admin.supportTicketAccept(id), method: "PATCH" }),
+  reply: (id: number | string, message: string) => request<SupportTicketResponse>({ url: endpoints.admin.supportTicketReply(id), method: "POST", data: { description: message, message } }),
   setStatus: (id: number | string, status: string) => request<SupportTicketResponse>({ url: endpoints.admin.supportTicketStatus(id), method: "PATCH", data: { status } }),
   remove: (id: number | string) => request<void>({ url: endpoints.admin.supportTicketById(id), method: "DELETE" }),
 };

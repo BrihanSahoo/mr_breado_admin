@@ -113,3 +113,93 @@
 @utility gradient-warning { background: var(--gradient-warning); }
 @utility shadow-card { box-shadow: var(--shadow-card); }
 @utility shadow-glow { box-shadow: var(--shadow-glow); }
+
+.theme-light {
+  --background: oklch(0.985 0.004 75);
+  --foreground: oklch(0.18 0.01 55);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.01 55);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.01 55);
+  --primary: oklch(0.68 0.20 42);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.94 0.01 75);
+  --secondary-foreground: oklch(0.20 0.01 55);
+  --muted: oklch(0.94 0.01 75);
+  --muted-foreground: oklch(0.48 0.02 60);
+  --accent: oklch(0.93 0.02 70);
+  --accent-foreground: oklch(0.20 0.01 55);
+  --border: oklch(0.88 0.01 75);
+  --input: oklch(0.92 0.01 75);
+  --sidebar: oklch(0.97 0.006 75);
+  --sidebar-foreground: oklch(0.22 0.01 55);
+  --sidebar-accent: oklch(0.92 0.02 70);
+  --sidebar-border: oklch(0.88 0.01 75);
+}
+
+.theme-luxury {
+  --background: oklch(0.13 0.02 70);
+  --foreground: oklch(0.95 0.03 85);
+  --card: oklch(0.18 0.025 70);
+  --card-foreground: oklch(0.95 0.03 85);
+  --popover: oklch(0.18 0.025 70);
+  --popover-foreground: oklch(0.95 0.03 85);
+  --primary: oklch(0.80 0.16 78);
+  --primary-foreground: oklch(0.14 0.02 70);
+  --secondary: oklch(0.24 0.03 70);
+  --secondary-foreground: oklch(0.95 0.03 85);
+  --muted: oklch(0.24 0.03 70);
+  --muted-foreground: oklch(0.70 0.04 85);
+  --accent: oklch(0.28 0.04 75);
+  --accent-foreground: oklch(0.95 0.03 85);
+  --border: oklch(0.34 0.04 75);
+  --input: oklch(0.28 0.04 75);
+  --sidebar: oklch(0.15 0.02 70);
+  --sidebar-foreground: oklch(0.88 0.03 85);
+  --sidebar-accent: oklch(0.24 0.04 75);
+  --sidebar-border: oklch(0.30 0.04 75);
+  --gradient-primary: linear-gradient(135deg, oklch(0.82 0.15 78), oklch(0.70 0.16 45));
+  --shadow-glow: 0 0 28px oklch(0.82 0.15 78 / 0.35);
+}
+
+/* Professional Mr Breado luxury admin shell */
+html.theme-luxury body {
+  background:
+    radial-gradient(circle at 85% 0%, oklch(0.20 0.06 85 / 0.28), transparent 28rem),
+    radial-gradient(circle at 0% 18%, oklch(0.24 0.08 55 / 0.20), transparent 34rem),
+    var(--background);
+}
+.theme-luxury {
+  color-scheme: dark;
+  --background: oklch(0.105 0.016 82);
+  --foreground: oklch(0.965 0.025 86);
+  --card: oklch(0.145 0.020 82);
+  --card-foreground: oklch(0.965 0.025 86);
+  --popover: oklch(0.145 0.020 82);
+  --popover-foreground: oklch(0.965 0.025 86);
+  --primary: oklch(0.82 0.145 82);
+  --primary-foreground: oklch(0.12 0.02 82);
+  --secondary: oklch(0.19 0.025 82);
+  --secondary-foreground: oklch(0.96 0.025 86);
+  --muted: oklch(0.20 0.024 82);
+  --muted-foreground: oklch(0.72 0.035 86);
+  --accent: oklch(0.225 0.04 76);
+  --accent-foreground: oklch(0.98 0.025 88);
+  --border: oklch(0.275 0.04 78);
+  --input: oklch(0.18 0.025 82);
+  --ring: oklch(0.82 0.145 82);
+  --sidebar: oklch(0.12 0.018 82);
+  --sidebar-foreground: oklch(0.90 0.026 86);
+  --sidebar-accent: oklch(0.19 0.04 76);
+  --sidebar-border: oklch(0.25 0.035 78);
+  --gradient-primary: linear-gradient(135deg, oklch(0.86 0.14 85), oklch(0.68 0.16 52));
+  --shadow-card: 0 1px 0 oklch(1 0 0 / 0.04), 0 18px 48px oklch(0 0 0 / 0.38);
+  --shadow-glow: 0 0 30px oklch(0.82 0.145 82 / 0.34);
+}
+
+.theme-luxury .shadow-card { box-shadow: var(--shadow-card); }
+.theme-luxury table tr:hover { background: oklch(0.18 0.035 78 / 0.7); }
+
+@media (max-width: 900px) {
+  .admin-table-scroll { overflow-x: auto; }
+}
