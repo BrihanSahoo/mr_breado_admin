@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/admin/page-header";
 import { customerMessagesService, type NotificationReceiver, type NotificationType } from "@/services/customer-messages.service";
 
 export const Route = createFileRoute("/customer-messages")({
-  head: () => ({ meta: [{ title: "Admin Notifications | Mr Breado Admin" }] }),
+  head: () => ({ meta: [{ title: "Admin Notifications | Mr. Breado Admin" }] }),
   component: CustomerMessagesPage,
 });
 

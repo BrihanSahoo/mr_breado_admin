@@ -9,7 +9,7 @@ import { Ticket, Eye, MessageSquare, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/tickets")({
-  head: () => ({ meta: [{ title: "Support Tickets | Mr Breado Admin" }] }),
+  head: () => ({ meta: [{ title: "Support Tickets | Mr. Breado Admin" }] }),
   component: TicketsPage,
 });
 

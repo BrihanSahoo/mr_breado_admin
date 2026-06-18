@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { PageHeader } from "@/components/admin/page-header";
-import { Gift, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Gift, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Loader2, Upload, TicketPercent, Truck } from "lucide-react";
 import {
   useOffers, useCreateOffer, useUpdateOffer, useDeleteOffer, useToggleOfferStatus,
 } from "@/hooks/queries/use-offers";
@@ -148,54 +148,70 @@ function OfferDialog({
   onSubmit: (b: OfferRequest) => void;
   submitting?: boolean;
 }) {
-  const [form, setForm] = useState<OfferRequest>({
+  const [form, setForm] = useState<any>({
     title: offer.title || offer.name || "",
     subtitle: offer.subtitle || "",
     description: offer.description || "",
-    imageUrl: offer.imageUrl || offer.image || "",
+    imageUrl: offer.imageUrl || offer.image || offer.banner || "",
+    couponEnabled: (offer as any).couponEnabled ?? Boolean((offer as any).couponCode),
+    couponCode: (offer as any).couponCode || "",
     discountType: offer.discountType || "PERCENT",
     discountValue: offer.discountValue ?? 0,
     minOrderAmount: offer.minOrderAmount ?? 0,
+    maxDiscount: (offer as any).maxDiscount ?? 0,
+    validFrom: (offer as any).validFrom || "",
+    validTo: (offer as any).validTo || "",
     enabled: offer.enabled ?? true,
   });
+  const readFile = (file?: File) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setForm((f: any) => ({ ...f, imageUrl: String(reader.result || "") }));
+    reader.readAsDataURL(file);
+  };
+  const isFreeDelivery = form.discountType === "FREE_DELIVERY";
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4">
-      <div className="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-card">
-        <h3 className="mb-3 text-lg font-semibold">{isNew ? "New Offer" : "Edit Offer"}</h3>
-        <div className="space-y-3">
-          <input className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-            placeholder="Title" value={form.title || ""}
-            onChange={(e) => setForm({ ...form, title: e.target.value })} />
-          <input className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-            placeholder="Subtitle" value={form.subtitle || ""}
-            onChange={(e) => setForm({ ...form, subtitle: e.target.value })} />
-          <input className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-            placeholder="Image URL" value={form.imageUrl || ""}
-            onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} />
-          <textarea className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-            placeholder="Description" rows={3} value={form.description || ""}
-            onChange={(e) => setForm({ ...form, description: e.target.value })} />
-          <div className="grid grid-cols-2 gap-2">
-            <input type="number" className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-              placeholder="Discount value" value={form.discountValue ?? 0}
-              onChange={(e) => setForm({ ...form, discountValue: Number(e.target.value) })} />
-            <input type="number" className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-              placeholder="Min order amount" value={form.minOrderAmount ?? 0}
-              onChange={(e) => setForm({ ...form, minOrderAmount: Number(e.target.value) })} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
+      <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-primary/25 bg-card p-6 shadow-2xl">
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-xl font-bold">{isNew ? "Create Business Offer" : "Edit Business Offer"}</h3>
+            <p className="text-sm text-muted-foreground">One practical offer section with banner, optional coupon, duration and free-delivery support.</p>
           </div>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={!!form.enabled}
-              onChange={(e) => setForm({ ...form, enabled: e.target.checked })} />
-            Enabled
-          </label>
+          <Gift className="h-7 w-7 text-primary" />
         </div>
-        <div className="mt-4 flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-md border border-border px-3 py-1.5 text-sm">Cancel</button>
-          <button disabled={submitting || !form.title}
-            onClick={() => onSubmit(form)}
-            className="rounded-md gradient-primary px-3 py-1.5 text-sm font-medium text-primary-foreground disabled:opacity-50">
-            {submitting ? "Saving…" : "Save"}
-          </button>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-3">
+            <input className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" placeholder="Offer title" value={form.title || ""} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+            <input className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" placeholder="Short subtitle" value={form.subtitle || ""} onChange={(e) => setForm({ ...form, subtitle: e.target.value })} />
+            <textarea className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" placeholder="Offer description" rows={4} value={form.description || ""} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-primary/40 bg-primary/5 px-4 py-4 text-sm font-medium text-primary hover:bg-primary/10">
+              <Upload className="h-4 w-4" /> Select offer image from device
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => readFile(e.target.files?.[0])} />
+            </label>
+            {form.imageUrl ? <img src={form.imageUrl} alt="Offer preview" className="h-40 w-full rounded-xl object-cover" /> : <div className="flex h-40 items-center justify-center rounded-xl bg-muted text-sm text-muted-foreground">No offer image selected</div>}
+          </div>
+          <div className="space-y-3 rounded-2xl border bg-muted/20 p-4">
+            <label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" checked={!!form.enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} /> Offer enabled</label>
+            <label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" checked={!!form.couponEnabled} onChange={(e) => setForm({ ...form, couponEnabled: e.target.checked })} /> <TicketPercent className="h-4 w-4" /> Attach coupon code</label>
+            {form.couponEnabled && <input className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm uppercase" placeholder="Coupon code e.g. FREEDEL" value={form.couponCode || ""} onChange={(e) => setForm({ ...form, couponCode: e.target.value.toUpperCase() })} />}
+            <select className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" value={form.discountType} onChange={(e) => setForm({ ...form, discountType: e.target.value })}>
+              <option value="PERCENT">Percentage discount</option>
+              <option value="FLAT">Flat discount</option>
+              <option value="FREE_DELIVERY">Free delivery charge</option>
+            </select>
+            {isFreeDelivery ? <div className="rounded-xl border border-primary/30 bg-primary/10 p-3 text-sm"><Truck className="mr-2 inline h-4 w-4" /> This coupon will set user delivery fee to ₹0 when valid.</div> : <input type="number" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" placeholder="Discount value" value={form.discountValue ?? 0} onChange={(e) => setForm({ ...form, discountValue: Number(e.target.value) })} />}
+            <input type="number" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" placeholder="Minimum order amount" value={form.minOrderAmount ?? 0} onChange={(e) => setForm({ ...form, minOrderAmount: Number(e.target.value) })} />
+            <input type="number" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" placeholder="Max discount cap" value={form.maxDiscount ?? 0} onChange={(e) => setForm({ ...form, maxDiscount: Number(e.target.value) })} />
+            <div className="grid grid-cols-2 gap-2">
+              <label className="text-xs text-muted-foreground">Valid from<input type="date" className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm" value={form.validFrom || ""} onChange={(e) => setForm({ ...form, validFrom: e.target.value })} /></label>
+              <label className="text-xs text-muted-foreground">Valid till<input type="date" className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm" value={form.validTo || ""} onChange={(e) => setForm({ ...form, validTo: e.target.value })} /></label>
+            </div>
+          </div>
+        </div>
+        <div className="mt-5 flex justify-end gap-2">
+          <button onClick={onClose} className="rounded-md border border-border px-4 py-2 text-sm">Cancel</button>
+          <button disabled={submitting || !form.title} onClick={() => onSubmit(form as OfferRequest)} className="rounded-md gradient-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50">{submitting ? "Saving…" : "Save Offer"}</button>
         </div>
       </div>
     </div>

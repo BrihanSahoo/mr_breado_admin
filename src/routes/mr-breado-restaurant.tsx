@@ -8,7 +8,7 @@ import { StatusBadge } from "@/components/admin/status-badge";
 import { mrBreadoService } from "@/services/mr-breado.service";
 
 export const Route = createFileRoute("/mr-breado-restaurant")({
-  head: () => ({ meta: [{ title: "Mr Breado Restaurant | Admin" }] }),
+  head: () => ({ meta: [{ title: "Mr. Breado Restaurant | Admin" }] }),
   component: MrBreadoRestaurantPage,
 });
 
@@ -46,7 +46,7 @@ function MrBreadoRestaurantPage() {
       });
       return mrBreadoService.updateRestaurant(fd);
     },
-    onSuccess: () => { toast.success("Mr Breado restaurant updated"); qc.invalidateQueries({ queryKey: ["mr-breado", "restaurant"] }); },
+    onSuccess: () => { toast.success("Mr. Breado restaurant updated"); qc.invalidateQueries({ queryKey: ["mr-breado", "restaurant"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -61,7 +61,7 @@ function MrBreadoRestaurantPage() {
   const isVisible = String(data?.visibilityStatus ?? data?.visibility_status ?? "VISIBLE").toUpperCase() !== "HIDDEN";
 
   return <>
-    <PageHeader title="Mr Breado Restaurant" icon={<Building2 className="h-5 w-5" />} breadcrumbs={[{ label: "Dashboard", to: "/" }, { label: "Mr Breado Restaurant" }]} />
+    <PageHeader title="Mr. Breado Restaurant" icon={<Building2 className="h-5 w-5" />} breadcrumbs={[{ label: "Dashboard", to: "/" }, { label: "Mr. Breado Restaurant" }]} />
     <div className="grid gap-5 xl:grid-cols-[1fr_320px]">
       <section className="rounded-xl border border-border bg-card p-4 shadow-card md:p-6">
         {isLoading ? <div className="h-96 animate-pulse rounded-lg bg-primary/10" /> : <>

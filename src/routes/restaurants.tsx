@@ -128,7 +128,7 @@ function RestaurantModal({ restaurant, onClose, onVerify, onUnverify, busy }: { 
       </div>
       <div className="mt-4 rounded-xl border border-border bg-background/50 p-4"><div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Address</div><p className="mt-2 whitespace-pre-wrap text-sm">{restaurant.address || "No address returned by backend."}</p></div>
       <div className="mt-5 flex flex-wrap justify-end gap-2">
-        <button disabled className="inline-flex items-center gap-2 rounded-xl border border-border px-5 py-3 text-sm font-bold text-muted-foreground disabled:opacity-50"><Power className="h-4 w-4" />Open/Close from Mr Breado Restaurant page</button>
+        <button disabled className="inline-flex items-center gap-2 rounded-xl border border-border px-5 py-3 text-sm font-bold text-muted-foreground disabled:opacity-50"><Power className="h-4 w-4" />Open/Close from Mr. Breado Restaurant page</button>
         {isRestaurantVerified(restaurant) ? <button onClick={onUnverify} disabled={busy} className="rounded-xl border border-red-500/40 px-5 py-3 text-sm font-bold text-red-500 disabled:opacity-50">Mark Unverified</button> : <button onClick={onVerify} disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white disabled:opacity-50"><ShieldCheck className="h-4 w-4" />Verify Restaurant</button>}
       </div>
     </div>

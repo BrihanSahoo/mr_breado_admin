@@ -13,6 +13,7 @@ import { Route as ZonesRouteImport } from './routes/zones'
 import { Route as TicketsRouteImport } from './routes/tickets'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as SubscriptionsRouteImport } from './routes/subscriptions'
+import { Route as StoriesRouteImport } from './routes/stories'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ServiceAreaVerificationsRouteImport } from './routes/service-area-verifications'
 import { Route as RolesRouteImport } from './routes/roles'
@@ -23,10 +24,12 @@ import { Route as PermissionsRouteImport } from './routes/permissions'
 import { Route as PayoutsRouteImport } from './routes/payouts'
 import { Route as OwnersRouteImport } from './routes/owners'
 import { Route as OperationsRouteImport } from './routes/operations'
+import { Route as OnlineTransactionsRouteImport } from './routes/online-transactions'
 import { Route as OffersRouteImport } from './routes/offers'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as MrBreadoRestaurantRouteImport } from './routes/mr-breado-restaurant'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as FranchiseRouteImport } from './routes/franchise'
 import { Route as FoodsRouteImport } from './routes/foods'
 import { Route as DeliveryBoysRouteImport } from './routes/delivery-boys'
 import { Route as CustomersRouteImport } from './routes/customers'
@@ -34,6 +37,8 @@ import { Route as CustomerMessagesRouteImport } from './routes/customer-messages
 import { Route as CuisineRouteImport } from './routes/cuisine'
 import { Route as CouponsRouteImport } from './routes/coupons'
 import { Route as CategoriesRouteImport } from './routes/categories'
+import { Route as BusinessOutletsRouteImport } from './routes/business-outlets'
+import { Route as BrandsRouteImport } from './routes/brands'
 import { Route as BannersRouteImport } from './routes/banners'
 import { Route as AdminProfileRouteImport } from './routes/admin-profile'
 import { Route as AdminFoodsRouteImport } from './routes/admin-foods'
@@ -46,6 +51,7 @@ import { Route as OrdersDeliveredRouteImport } from './routes/orders/delivered'
 import { Route as OrdersCancelledRouteImport } from './routes/orders/cancelled'
 import { Route as OrdersActiveRouteImport } from './routes/orders/active'
 import { Route as OrdersAcceptedRouteImport } from './routes/orders/accepted'
+import { Route as BusinessOutletsOutletIdRouteImport } from './routes/business-outlets.$outletId'
 
 const ZonesRoute = ZonesRouteImport.update({
   id: '/zones',
@@ -65,6 +71,11 @@ const SupportRoute = SupportRouteImport.update({
 const SubscriptionsRoute = SubscriptionsRouteImport.update({
   id: '/subscriptions',
   path: '/subscriptions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoriesRoute = StoriesRouteImport.update({
+  id: '/stories',
+  path: '/stories',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -118,6 +129,11 @@ const OperationsRoute = OperationsRouteImport.update({
   path: '/operations',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OnlineTransactionsRoute = OnlineTransactionsRouteImport.update({
+  id: '/online-transactions',
+  path: '/online-transactions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OffersRoute = OffersRouteImport.update({
   id: '/offers',
   path: '/offers',
@@ -136,6 +152,11 @@ const MrBreadoRestaurantRoute = MrBreadoRestaurantRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FranchiseRoute = FranchiseRouteImport.update({
+  id: '/franchise',
+  path: '/franchise',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FoodsRoute = FoodsRouteImport.update({
@@ -171,6 +192,16 @@ const CouponsRoute = CouponsRouteImport.update({
 const CategoriesRoute = CategoriesRouteImport.update({
   id: '/categories',
   path: '/categories',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BusinessOutletsRoute = BusinessOutletsRouteImport.update({
+  id: '/business-outlets',
+  path: '/business-outlets',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BrandsRoute = BrandsRouteImport.update({
+  id: '/brands',
+  path: '/brands',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BannersRoute = BannersRouteImport.update({
@@ -233,12 +264,19 @@ const OrdersAcceptedRoute = OrdersAcceptedRouteImport.update({
   path: '/orders/accepted',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BusinessOutletsOutletIdRoute = BusinessOutletsOutletIdRouteImport.update({
+  id: '/$outletId',
+  path: '/$outletId',
+  getParentRoute: () => BusinessOutletsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin-foods': typeof AdminFoodsRoute
   '/admin-profile': typeof AdminProfileRoute
   '/banners': typeof BannersRoute
+  '/brands': typeof BrandsRoute
+  '/business-outlets': typeof BusinessOutletsRouteWithChildren
   '/categories': typeof CategoriesRoute
   '/coupons': typeof CouponsRoute
   '/cuisine': typeof CuisineRoute
@@ -246,10 +284,12 @@ export interface FileRoutesByFullPath {
   '/customers': typeof CustomersRoute
   '/delivery-boys': typeof DeliveryBoysRoute
   '/foods': typeof FoodsRoute
+  '/franchise': typeof FranchiseRoute
   '/login': typeof LoginRoute
   '/mr-breado-restaurant': typeof MrBreadoRestaurantRoute
   '/notifications': typeof NotificationsRoute
   '/offers': typeof OffersRoute
+  '/online-transactions': typeof OnlineTransactionsRoute
   '/operations': typeof OperationsRoute
   '/owners': typeof OwnersRoute
   '/payouts': typeof PayoutsRoute
@@ -260,10 +300,12 @@ export interface FileRoutesByFullPath {
   '/roles': typeof RolesRoute
   '/service-area-verifications': typeof ServiceAreaVerificationsRoute
   '/settings': typeof SettingsRoute
+  '/stories': typeof StoriesRoute
   '/subscriptions': typeof SubscriptionsRoute
   '/support': typeof SupportRoute
   '/tickets': typeof TicketsRoute
   '/zones': typeof ZonesRoute
+  '/business-outlets/$outletId': typeof BusinessOutletsOutletIdRoute
   '/orders/accepted': typeof OrdersAcceptedRoute
   '/orders/active': typeof OrdersActiveRoute
   '/orders/cancelled': typeof OrdersCancelledRoute
@@ -278,6 +320,8 @@ export interface FileRoutesByTo {
   '/admin-foods': typeof AdminFoodsRoute
   '/admin-profile': typeof AdminProfileRoute
   '/banners': typeof BannersRoute
+  '/brands': typeof BrandsRoute
+  '/business-outlets': typeof BusinessOutletsRouteWithChildren
   '/categories': typeof CategoriesRoute
   '/coupons': typeof CouponsRoute
   '/cuisine': typeof CuisineRoute
@@ -285,10 +329,12 @@ export interface FileRoutesByTo {
   '/customers': typeof CustomersRoute
   '/delivery-boys': typeof DeliveryBoysRoute
   '/foods': typeof FoodsRoute
+  '/franchise': typeof FranchiseRoute
   '/login': typeof LoginRoute
   '/mr-breado-restaurant': typeof MrBreadoRestaurantRoute
   '/notifications': typeof NotificationsRoute
   '/offers': typeof OffersRoute
+  '/online-transactions': typeof OnlineTransactionsRoute
   '/operations': typeof OperationsRoute
   '/owners': typeof OwnersRoute
   '/payouts': typeof PayoutsRoute
@@ -299,10 +345,12 @@ export interface FileRoutesByTo {
   '/roles': typeof RolesRoute
   '/service-area-verifications': typeof ServiceAreaVerificationsRoute
   '/settings': typeof SettingsRoute
+  '/stories': typeof StoriesRoute
   '/subscriptions': typeof SubscriptionsRoute
   '/support': typeof SupportRoute
   '/tickets': typeof TicketsRoute
   '/zones': typeof ZonesRoute
+  '/business-outlets/$outletId': typeof BusinessOutletsOutletIdRoute
   '/orders/accepted': typeof OrdersAcceptedRoute
   '/orders/active': typeof OrdersActiveRoute
   '/orders/cancelled': typeof OrdersCancelledRoute
@@ -318,6 +366,8 @@ export interface FileRoutesById {
   '/admin-foods': typeof AdminFoodsRoute
   '/admin-profile': typeof AdminProfileRoute
   '/banners': typeof BannersRoute
+  '/brands': typeof BrandsRoute
+  '/business-outlets': typeof BusinessOutletsRouteWithChildren
   '/categories': typeof CategoriesRoute
   '/coupons': typeof CouponsRoute
   '/cuisine': typeof CuisineRoute
@@ -325,10 +375,12 @@ export interface FileRoutesById {
   '/customers': typeof CustomersRoute
   '/delivery-boys': typeof DeliveryBoysRoute
   '/foods': typeof FoodsRoute
+  '/franchise': typeof FranchiseRoute
   '/login': typeof LoginRoute
   '/mr-breado-restaurant': typeof MrBreadoRestaurantRoute
   '/notifications': typeof NotificationsRoute
   '/offers': typeof OffersRoute
+  '/online-transactions': typeof OnlineTransactionsRoute
   '/operations': typeof OperationsRoute
   '/owners': typeof OwnersRoute
   '/payouts': typeof PayoutsRoute
@@ -339,10 +391,12 @@ export interface FileRoutesById {
   '/roles': typeof RolesRoute
   '/service-area-verifications': typeof ServiceAreaVerificationsRoute
   '/settings': typeof SettingsRoute
+  '/stories': typeof StoriesRoute
   '/subscriptions': typeof SubscriptionsRoute
   '/support': typeof SupportRoute
   '/tickets': typeof TicketsRoute
   '/zones': typeof ZonesRoute
+  '/business-outlets/$outletId': typeof BusinessOutletsOutletIdRoute
   '/orders/accepted': typeof OrdersAcceptedRoute
   '/orders/active': typeof OrdersActiveRoute
   '/orders/cancelled': typeof OrdersCancelledRoute
@@ -359,6 +413,8 @@ export interface FileRouteTypes {
     | '/admin-foods'
     | '/admin-profile'
     | '/banners'
+    | '/brands'
+    | '/business-outlets'
     | '/categories'
     | '/coupons'
     | '/cuisine'
@@ -366,10 +422,12 @@ export interface FileRouteTypes {
     | '/customers'
     | '/delivery-boys'
     | '/foods'
+    | '/franchise'
     | '/login'
     | '/mr-breado-restaurant'
     | '/notifications'
     | '/offers'
+    | '/online-transactions'
     | '/operations'
     | '/owners'
     | '/payouts'
@@ -380,10 +438,12 @@ export interface FileRouteTypes {
     | '/roles'
     | '/service-area-verifications'
     | '/settings'
+    | '/stories'
     | '/subscriptions'
     | '/support'
     | '/tickets'
     | '/zones'
+    | '/business-outlets/$outletId'
     | '/orders/accepted'
     | '/orders/active'
     | '/orders/cancelled'
@@ -398,6 +458,8 @@ export interface FileRouteTypes {
     | '/admin-foods'
     | '/admin-profile'
     | '/banners'
+    | '/brands'
+    | '/business-outlets'
     | '/categories'
     | '/coupons'
     | '/cuisine'
@@ -405,10 +467,12 @@ export interface FileRouteTypes {
     | '/customers'
     | '/delivery-boys'
     | '/foods'
+    | '/franchise'
     | '/login'
     | '/mr-breado-restaurant'
     | '/notifications'
     | '/offers'
+    | '/online-transactions'
     | '/operations'
     | '/owners'
     | '/payouts'
@@ -419,10 +483,12 @@ export interface FileRouteTypes {
     | '/roles'
     | '/service-area-verifications'
     | '/settings'
+    | '/stories'
     | '/subscriptions'
     | '/support'
     | '/tickets'
     | '/zones'
+    | '/business-outlets/$outletId'
     | '/orders/accepted'
     | '/orders/active'
     | '/orders/cancelled'
@@ -437,6 +503,8 @@ export interface FileRouteTypes {
     | '/admin-foods'
     | '/admin-profile'
     | '/banners'
+    | '/brands'
+    | '/business-outlets'
     | '/categories'
     | '/coupons'
     | '/cuisine'
@@ -444,10 +512,12 @@ export interface FileRouteTypes {
     | '/customers'
     | '/delivery-boys'
     | '/foods'
+    | '/franchise'
     | '/login'
     | '/mr-breado-restaurant'
     | '/notifications'
     | '/offers'
+    | '/online-transactions'
     | '/operations'
     | '/owners'
     | '/payouts'
@@ -458,10 +528,12 @@ export interface FileRouteTypes {
     | '/roles'
     | '/service-area-verifications'
     | '/settings'
+    | '/stories'
     | '/subscriptions'
     | '/support'
     | '/tickets'
     | '/zones'
+    | '/business-outlets/$outletId'
     | '/orders/accepted'
     | '/orders/active'
     | '/orders/cancelled'
@@ -477,6 +549,8 @@ export interface RootRouteChildren {
   AdminFoodsRoute: typeof AdminFoodsRoute
   AdminProfileRoute: typeof AdminProfileRoute
   BannersRoute: typeof BannersRoute
+  BrandsRoute: typeof BrandsRoute
+  BusinessOutletsRoute: typeof BusinessOutletsRouteWithChildren
   CategoriesRoute: typeof CategoriesRoute
   CouponsRoute: typeof CouponsRoute
   CuisineRoute: typeof CuisineRoute
@@ -484,10 +558,12 @@ export interface RootRouteChildren {
   CustomersRoute: typeof CustomersRoute
   DeliveryBoysRoute: typeof DeliveryBoysRoute
   FoodsRoute: typeof FoodsRoute
+  FranchiseRoute: typeof FranchiseRoute
   LoginRoute: typeof LoginRoute
   MrBreadoRestaurantRoute: typeof MrBreadoRestaurantRoute
   NotificationsRoute: typeof NotificationsRoute
   OffersRoute: typeof OffersRoute
+  OnlineTransactionsRoute: typeof OnlineTransactionsRoute
   OperationsRoute: typeof OperationsRoute
   OwnersRoute: typeof OwnersRoute
   PayoutsRoute: typeof PayoutsRoute
@@ -498,6 +574,7 @@ export interface RootRouteChildren {
   RolesRoute: typeof RolesRoute
   ServiceAreaVerificationsRoute: typeof ServiceAreaVerificationsRoute
   SettingsRoute: typeof SettingsRoute
+  StoriesRoute: typeof StoriesRoute
   SubscriptionsRoute: typeof SubscriptionsRoute
   SupportRoute: typeof SupportRoute
   TicketsRoute: typeof TicketsRoute
@@ -540,6 +617,13 @@ declare module '@tanstack/react-router' {
       path: '/subscriptions'
       fullPath: '/subscriptions'
       preLoaderRoute: typeof SubscriptionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stories': {
+      id: '/stories'
+      path: '/stories'
+      fullPath: '/stories'
+      preLoaderRoute: typeof StoriesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -612,6 +696,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OperationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/online-transactions': {
+      id: '/online-transactions'
+      path: '/online-transactions'
+      fullPath: '/online-transactions'
+      preLoaderRoute: typeof OnlineTransactionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/offers': {
       id: '/offers'
       path: '/offers'
@@ -638,6 +729,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/franchise': {
+      id: '/franchise'
+      path: '/franchise'
+      fullPath: '/franchise'
+      preLoaderRoute: typeof FranchiseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/foods': {
@@ -687,6 +785,20 @@ declare module '@tanstack/react-router' {
       path: '/categories'
       fullPath: '/categories'
       preLoaderRoute: typeof CategoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/business-outlets': {
+      id: '/business-outlets'
+      path: '/business-outlets'
+      fullPath: '/business-outlets'
+      preLoaderRoute: typeof BusinessOutletsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/brands': {
+      id: '/brands'
+      path: '/brands'
+      fullPath: '/brands'
+      preLoaderRoute: typeof BrandsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/banners': {
@@ -773,14 +885,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrdersAcceptedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/business-outlets/$outletId': {
+      id: '/business-outlets/$outletId'
+      path: '/$outletId'
+      fullPath: '/business-outlets/$outletId'
+      preLoaderRoute: typeof BusinessOutletsOutletIdRouteImport
+      parentRoute: typeof BusinessOutletsRoute
+    }
   }
 }
+
+interface BusinessOutletsRouteChildren {
+  BusinessOutletsOutletIdRoute: typeof BusinessOutletsOutletIdRoute
+}
+
+const BusinessOutletsRouteChildren: BusinessOutletsRouteChildren = {
+  BusinessOutletsOutletIdRoute: BusinessOutletsOutletIdRoute,
+}
+
+const BusinessOutletsRouteWithChildren = BusinessOutletsRoute._addFileChildren(
+  BusinessOutletsRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminFoodsRoute: AdminFoodsRoute,
   AdminProfileRoute: AdminProfileRoute,
   BannersRoute: BannersRoute,
+  BrandsRoute: BrandsRoute,
+  BusinessOutletsRoute: BusinessOutletsRouteWithChildren,
   CategoriesRoute: CategoriesRoute,
   CouponsRoute: CouponsRoute,
   CuisineRoute: CuisineRoute,
@@ -788,10 +921,12 @@ const rootRouteChildren: RootRouteChildren = {
   CustomersRoute: CustomersRoute,
   DeliveryBoysRoute: DeliveryBoysRoute,
   FoodsRoute: FoodsRoute,
+  FranchiseRoute: FranchiseRoute,
   LoginRoute: LoginRoute,
   MrBreadoRestaurantRoute: MrBreadoRestaurantRoute,
   NotificationsRoute: NotificationsRoute,
   OffersRoute: OffersRoute,
+  OnlineTransactionsRoute: OnlineTransactionsRoute,
   OperationsRoute: OperationsRoute,
   OwnersRoute: OwnersRoute,
   PayoutsRoute: PayoutsRoute,
@@ -802,6 +937,7 @@ const rootRouteChildren: RootRouteChildren = {
   RolesRoute: RolesRoute,
   ServiceAreaVerificationsRoute: ServiceAreaVerificationsRoute,
   SettingsRoute: SettingsRoute,
+  StoriesRoute: StoriesRoute,
   SubscriptionsRoute: SubscriptionsRoute,
   SupportRoute: SupportRoute,
   TicketsRoute: TicketsRoute,

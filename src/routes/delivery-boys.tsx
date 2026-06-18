@@ -15,6 +15,10 @@ export const Route = createFileRoute("/delivery-boys")({
   component: DriversPage,
 });
 
+function hasPendingVerification(r: AdminDriverCashResponse) {
+  return String(r.verificationStatus ?? "").toUpperCase() === "PENDING" || Boolean((r as any).pendingVerification || (r as any).verificationRequestId);
+}
+
 function isDriverVerified(r: AdminDriverCashResponse) {
   const status = String(r.verificationStatus ?? "").toUpperCase();
   if (status) return status === "VERIFIED" || status === "APPROVED";
@@ -42,7 +46,7 @@ function DriversPage() {
   });
 
   const cashSettlement = (r: AdminDriverCashResponse) => {
-    const amount = Number(window.prompt(`Enter cash settlement amount for ${r.driverName}`, String(Number(r.cashInHand ?? 0).toFixed(2))) || 0);
+    const amount = Number(window.prompt(`Enter cash settlement amount for ${r.driverName || "Delivery Partner"}`, String(Number(r.cashInHand ?? 0).toFixed(2))) || 0);
     if (amount <= 0) return;
     verify.mutate({ driverId: r.driverId, body: { amount, paymentMethod: "CASH", note: "Verified by admin panel" } });
   };
@@ -58,7 +62,7 @@ function DriversPage() {
           <span className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-card ${driverActive(r) ? "bg-success" : "bg-muted-foreground"}`} />
         </div>
         <div>
-          <div className="font-medium">{r.driverName}</div>
+          <div className="flex flex-wrap items-center gap-2"><span className="font-medium">{r.driverName || "Delivery Partner"}</span>{hasPendingVerification(r) && <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-500">PENDING DOCS</span>}</div>
           <div className="text-xs text-muted-foreground">#{r.driverId}</div>
         </div>
       </div>
@@ -68,12 +72,12 @@ function DriversPage() {
     { key: "deliveries", header: "Deliveries", render: (r) => r.totalDeliveries ?? 0 },
     { key: "earnings", header: "Earnings", render: (r) => <span className="font-semibold">₹{Number(r.totalEarnings ?? 0).toFixed(2)}</span> },
     { key: "cash", header: "Cash in hand", render: (r) => <span>₹{Number(r.cashInHand ?? 0).toFixed(2)} / ₹{Number(r.cashLimit ?? 0).toFixed(2)}</span> },
-    { key: "verified", header: "Verification", render: (r) => <StatusBadge status={isDriverVerified(r) ? "Verified" : (r.verificationStatus || "Unverified")} /> },
+    { key: "verified", header: "Verification", render: (r) => <div className="flex flex-col gap-1"><StatusBadge status={isDriverVerified(r) ? "Verified" : (r.verificationStatus || "Unverified")} />{hasPendingVerification(r) && <span className="text-[11px] font-bold text-amber-500">Review pending request</span>}</div> },
     { key: "actions", header: "Actions", render: (r) => (
       <div className="flex flex-wrap gap-2">
         <button onClick={() => setSelected(r)} className="inline-flex items-center gap-1.5 rounded-lg border border-info/30 px-3 py-2 text-xs font-bold text-info hover:bg-info/10"><Eye className="h-4 w-4" />View</button>
         <button onClick={() => cashSettlement(r)} disabled={verify.isPending} className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/30 px-3 py-2 text-xs font-bold text-emerald-500 hover:bg-emerald-500/10 disabled:opacity-50"><CreditCard className="h-4 w-4" />Cash Settlement</button>
-        {!isDriverVerified(r) && <button onClick={() => verification.mutate({ driverId: r.driverId, status: "VERIFIED" })} disabled={verification.isPending} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50"><CheckCircle2 className="h-4 w-4" />Verify</button>}
+        {!isDriverVerified(r) && <button onClick={() => verification.mutate({ driverId: (r as any).userId || r.driverId, status: "VERIFIED" })} disabled={verification.isPending} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50"><CheckCircle2 className="h-4 w-4" />Verify</button>}
       </div>
     )},
   ];
@@ -106,11 +110,11 @@ function DriversPage() {
 function DriverModal({ driver, onClose, onCash, onVerify, onUnverify, busy }: { driver: AdminDriverCashResponse; onClose: () => void; onCash: () => void; onVerify: () => void; onUnverify: () => void; busy: boolean }) {
   return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
     <div className="w-full max-w-3xl rounded-2xl border border-border bg-card p-5 shadow-2xl">
-      <div className="flex items-start justify-between gap-4"><div><h2 className="text-xl font-extrabold">{driver.driverName}</h2><p className="text-sm text-muted-foreground">Delivery partner #{driver.driverId}</p></div><button onClick={onClose} className="rounded-lg border border-border p-2 hover:bg-muted"><X className="h-4 w-4" /></button></div>
+      <div className="flex items-start justify-between gap-4"><div><h2 className="text-xl font-extrabold">{driver.driverName || "Delivery Partner"}</h2><p className="text-sm text-muted-foreground">Delivery partner #{driver.driverId}</p></div><button onClick={onClose} className="rounded-lg border border-border p-2 hover:bg-muted"><X className="h-4 w-4" /></button></div>
       <div className="mt-5 grid gap-3 md:grid-cols-3">
         <Info label="Mobile" value={driver.driverMobile || "—"} />
         <Info label="Email" value={driver.driverEmail || "—"} />
-        <Info label="Verification" value={isDriverVerified(driver) ? "Verified" : (driver.verificationStatus || "Unverified")} />
+        <Info label="Verification" value={hasPendingVerification(driver) ? "Pending documents" : (isDriverVerified(driver) ? "Verified" : (driver.verificationStatus || "Unverified"))} />
         <Info label="Status" value={driverActive(driver) ? "Active" : "Inactive"} />
         <Info label="Deliveries" value={String(driver.totalDeliveries ?? 0)} />
         <Info label="Rating" value={String(driver.rating ?? 0)} />
@@ -120,6 +124,7 @@ function DriverModal({ driver, onClose, onCash, onVerify, onUnverify, busy }: { 
       </div>
       <div className="mt-5 flex flex-wrap justify-end gap-2">
         <button onClick={onCash} disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white disabled:opacity-50"><CreditCard className="h-4 w-4" />Cash Settlement</button>
+        {hasPendingVerification(driver) && <a href="/service-area-verifications" className="rounded-xl border border-amber-500/40 px-5 py-3 text-sm font-bold text-amber-500 hover:bg-amber-500/10">Open verification request</a>}
         {isDriverVerified(driver) ? <button onClick={onUnverify} disabled={busy} className="rounded-xl border border-red-500/40 px-5 py-3 text-sm font-bold text-red-500 disabled:opacity-50">Mark Unverified</button> : <button onClick={onVerify} disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground disabled:opacity-50"><ShieldCheck className="h-4 w-4" />Verify Driver</button>}
       </div>
     </div>

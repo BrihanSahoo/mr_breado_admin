@@ -1,0 +1,1 @@
+import{i as e,k as r}from"./index-MNbwVuNI.js";import{u as a}from"./users.service-dlAF3iQS.js";const t={all:["users"],list:s=>["users","list",s]};function l(s){return e({queryKey:t.list(s),queryFn:()=>a.list(s),placeholderData:r,staleTime:1e4})}export{t as a,l as u};

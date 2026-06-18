@@ -4,7 +4,7 @@ import { useSupportDashboard } from "@/hooks/queries/use-support";
 import { LifeBuoy, Ticket, CheckCircle2, Clock, Headphones } from "lucide-react";
 
 export const Route = createFileRoute("/support")({
-  head: () => ({ meta: [{ title: "Support Dashboard | Mr Breado Admin" }] }),
+  head: () => ({ meta: [{ title: "Support Dashboard | Mr. Breado Admin" }] }),
   component: SupportDashboardPage,
 });
 

@@ -13,17 +13,52 @@ export interface DriversQuery {
   search?: string;
 }
 
+function normalizeDriverPage(payload: any, params: DriversQuery): PageResponse<AdminDriverCashResponse> {
+  const data = payload?.data ?? payload;
+  const items = Array.isArray(data)
+    ? data
+    : Array.isArray(data?.items)
+      ? data.items
+      : Array.isArray(data?.drivers)
+        ? data.drivers
+        : Array.isArray(data?.deliveryBoys)
+          ? data.deliveryBoys
+          : Array.isArray(data?.content)
+            ? data.content
+            : Array.isArray(data?.records)
+              ? data.records
+              : [];
+  const perPage = Number(data?.perPage ?? data?.per_page ?? params.perPage ?? 20) || 20;
+  const page = Number(data?.page ?? data?.currentPage ?? params.page ?? 1) || 1;
+  return {
+    items: items as AdminDriverCashResponse[],
+    page,
+    per_page: perPage,
+    perPage,
+    total: Number(data?.total ?? data?.totalItems ?? data?.totalElements ?? items.length) || items.length,
+    total_pages: Number(data?.total_pages ?? data?.totalPages ?? Math.max(1, Math.ceil(items.length / Math.max(1, perPage)))) || 1,
+    totalPages: Number(data?.totalPages ?? data?.total_pages ?? Math.max(1, Math.ceil(items.length / Math.max(1, perPage)))) || 1,
+    last: data?.last ?? true,
+  } as PageResponse<AdminDriverCashResponse>;
+}
+
 export const driversService = {
-  list: (params: DriversQuery = {}) =>
-    request<PageResponse<AdminDriverCashResponse>>({
-      url: endpoints.admin.driversCash,
-      method: "GET",
-      params: {
-        page: params.page ?? 1,
-        perPage: params.perPage ?? 20,
-        search: params.search || undefined,
-      },
-    }),
+  list: async (params: DriversQuery = {}) => {
+    const query = { page: params.page ?? 1, perPage: params.perPage ?? 20, search: params.search || undefined, _t: Date.now() };
+    const urls = [endpoints.admin.drivers, "/admin/delivery-boys", "/delivery-boys", "/admin/riders"];
+    let lastError: unknown = null;
+    for (const url of urls) {
+      try {
+        const res = await api.get(url, { params: query });
+        const page = normalizeDriverPage(res.data, params);
+        if (page.items.length > 0 || url === urls[urls.length - 1]) return page;
+      } catch (e) {
+        lastError = e;
+      }
+    }
+    if (lastError) throw lastError;
+    return normalizeDriverPage({ items: [] }, params);
+  },
   details: async (driverId: number | string) => {
     try {
       const res = await api.get(endpoints.admin.driverVerificationDetails(driverId));

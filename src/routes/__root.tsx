@@ -15,6 +15,9 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { Toaster } from "@/components/ui/sonner";
+import { OutletCommandCenterPage } from "@/components/business-outlets/OutletCommandCenter";
+import { ApiKeysPage } from "@/components/business-settings/ApiKeysPage";
+import { PaymentControlsPage } from "@/components/business-settings/PaymentControlsPage";
 import { useAuth } from "@/store/auth";
 
 const PUBLIC_ROUTES = ["/login", "/register"];
@@ -114,6 +117,9 @@ function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { isAuthenticated } = useAuth();
   const isPublic = PUBLIC_ROUTES.some((p) => pathname.startsWith(p));
+  const outletDashboardMatch = pathname.match(/^\/business-outlets\/([^/?#]+)$/);
+  const isApiKeysPage = pathname === "/api-keys";
+  const isPaymentControlsPage = pathname === "/payment-controls";
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -127,7 +133,15 @@ function RootComponent() {
         <Navigate to="/login" />
       ) : (
         <AdminLayout>
-          <Outlet />
+          {isApiKeysPage ? (
+            <ApiKeysPage />
+          ) : isPaymentControlsPage ? (
+            <PaymentControlsPage />
+          ) : outletDashboardMatch?.[1] ? (
+            <OutletCommandCenterPage outletId={decodeURIComponent(outletDashboardMatch[1])} />
+          ) : (
+            <Outlet />
+          )}
         </AdminLayout>
       )}
       <Toaster />

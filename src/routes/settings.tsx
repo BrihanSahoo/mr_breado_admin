@@ -20,7 +20,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/settings")({
-  head: () => ({ meta: [{ title: "Settings | Mr Breado Admin" }] }),
+  head: () => ({ meta: [{ title: "Settings | Mr. Breado Admin" }] }),
   component: SettingsPage,
 });
 
@@ -209,13 +209,13 @@ function PaymentAndTakeawaySettings() {
       <div className="grid gap-4 lg:grid-cols-3">
         <StatusCard icon={<CreditCard className="h-5 w-5"/>} title="Online Payment" active={!!form.onlinePaymentEnabled && razorpayReady} activeText="Enabled" inactiveText={form.onlinePaymentEnabled ? "Credentials needed" : "Disabled"} />
         <StatusCard icon={<ShieldCheck className="h-5 w-5"/>} title="Razorpay Secret" active={!!form.razorpaySecretConfigured || !!form.razorpayKeySecret} activeText="Configured" inactiveText="Not configured" />
-        <StatusCard icon={<Truck className="h-5 w-5"/>} title="Mr Breado Takeaway" active={!!form.mrBreadoTakeawayEnabled} activeText="Enabled" inactiveText="Disabled" />
+        <StatusCard icon={<Truck className="h-5 w-5"/>} title="Mr. Breado Takeaway" active={!!form.mrBreadoTakeawayEnabled} activeText="Enabled" inactiveText="Disabled" />
       </div>
 
       <Gateway title="Payment Availability">
         <Toggle label="Cash on Delivery" value={!!form.codEnabled} onChange={(v)=>set("codEnabled",v)}/>
         <Toggle label="Online Payment" value={!!form.onlinePaymentEnabled} onChange={(v)=>set("onlinePaymentEnabled",v)}/>
-        <Toggle label="Mr Breado Takeaway" value={!!form.mrBreadoTakeawayEnabled} onChange={(v)=>set("mrBreadoTakeawayEnabled",v)}/>
+        <Toggle label="Mr. Breado Takeaway" value={!!form.mrBreadoTakeawayEnabled} onChange={(v)=>set("mrBreadoTakeawayEnabled",v)}/>
         <SelectField label="Razorpay Mode" value={form.razorpayMode ?? "TEST"} onChange={(v)=>set("razorpayMode",v)} options={["TEST","LIVE"]}/>
       </Gateway>
 

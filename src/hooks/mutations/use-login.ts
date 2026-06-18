@@ -16,6 +16,9 @@ export function useLogin() {
         toast.error("Login failed: no token returned");
       }
     },
-    onError: (e: Error) => toast.error(e.message || "Invalid credentials"),
+    onError: (e: Error) => {
+      const message = e.message || "Invalid admin email or password.";
+      toast.error(message);
+    },
   });
 }

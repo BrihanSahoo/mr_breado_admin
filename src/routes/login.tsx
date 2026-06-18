@@ -1,8 +1,9 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck } from "lucide-react";
 import authHero from "@/assets/auth-hero.jpg";
-import { ADMIN_LOGO_URL } from "@/api/endpoints";
+import { ADMIN_LOGO_URL, API_BASE_URL } from "@/api/endpoints";
+import { api } from "@/api/client";
 import { useLogin } from "@/hooks/mutations/use-login";
 
 export const Route = createFileRoute("/login")({
@@ -17,6 +18,15 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const login = useLogin();
   const loading = login.isPending;
+  const [backendState, setBackendState] = useState<"checking" | "online" | "offline">("checking");
+
+  useEffect(() => {
+    let active = true;
+    api.get("/health", { timeout: 8000 })
+      .then(() => active && setBackendState("online"))
+      .catch(() => active && setBackendState("offline"));
+    return () => { active = false; };
+  }, []);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,8 +50,8 @@ function LoginPage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,115,0,0.25),transparent_60%)]" />
         <div className="relative z-10 flex h-full flex-col justify-between p-10">
           <div className="flex items-center gap-2 text-foreground">
-            <img src={ADMIN_LOGO_URL} alt="Mr Breado" className="h-10 w-10 rounded-xl object-contain shadow-glow" />
-            <span className="text-lg font-bold tracking-tight">Mr Breado Admin</span>
+            <img src={ADMIN_LOGO_URL} alt="Mr. Breado" className="h-10 w-10 rounded-xl object-contain shadow-glow" />
+            <span className="text-lg font-bold tracking-tight">Mr. Breado Admin</span>
           </div>
           <div className="max-w-md">
             <h2 className="text-3xl font-bold leading-tight text-foreground">
@@ -63,8 +73,8 @@ function LoginPage() {
       <div className="flex items-center justify-center p-6 sm:p-10">
         <div className="w-full max-w-md">
           <div className="mb-8 flex items-center gap-2 lg:hidden">
-            <img src={ADMIN_LOGO_URL} alt="Mr Breado" className="h-9 w-9 rounded-lg object-contain" />
-            <span className="font-bold">Mr Breado Admin</span>
+            <img src={ADMIN_LOGO_URL} alt="Mr. Breado" className="h-9 w-9 rounded-lg object-contain" />
+            <span className="font-bold">Mr. Breado Admin</span>
           </div>
 
           <h1 className="text-2xl font-bold tracking-tight">Welcome back 👋</h1>
@@ -139,12 +149,17 @@ function LoginPage() {
             </div>
 
             <div className="rounded-xl border border-border bg-card/70 p-3 text-xs leading-5 text-muted-foreground">
-              Use only the administrator credentials created in the backend. Demo credentials are never displayed on this page.
+              <div className="flex items-center justify-between gap-3">
+                <span>{backendState === "online" ? "Backend connected" : backendState === "offline" ? "Backend unavailable" : "Checking backend…"}</span>
+                <span className={backendState === "online" ? "text-emerald-500" : backendState === "offline" ? "text-red-500" : "text-amber-500"}>●</span>
+              </div>
+              <div className="mt-1 break-all opacity-75">{API_BASE_URL}</div>
+              <div className="mt-2">Use only administrator credentials stored in the backend.</div>
             </div>
           </form>
 
           <p className="mt-8 text-center text-sm text-muted-foreground">
-            Access is restricted to approved Mr Breado administrators.
+            Access is restricted to approved Mr. Breado administrators.
           </p>
         </div>
       </div>

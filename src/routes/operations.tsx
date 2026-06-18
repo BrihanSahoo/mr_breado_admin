@@ -13,7 +13,7 @@ import { request } from "@/api/client";
 import { endpoints } from "@/api/endpoints";
 
 export const Route = createFileRoute("/operations")({
-  head: () => ({ meta: [{ title: "Operations | Mr Breado Admin" }] }),
+  head: () => ({ meta: [{ title: "Operations | Mr. Breado Admin" }] }),
   component: OperationsPage,
 });
 
@@ -144,7 +144,7 @@ function OperationsPage() {
       </div>
 
       <div className="mt-5">
-        <Panel title="Mr Breado Payment Ledger" subtitle="Admin-side store payment records from backend.">
+        <Panel title="Mr. Breado Payment Ledger" subtitle="Admin-side store payment records from backend.">
           <MiniList loading={mrBreadoPayments.isLoading} empty="No payment ledger rows" rows={paymentRows.map((p: any) => ({
             title: p.orderNumber ?? p.paymentId ?? p.razorpayPaymentId ?? `Payment #${p.id ?? ""}`,
             sub: [p.customerName, p.paymentType, p.paymentStatus, p.createdAt].filter(Boolean).join(" · "),

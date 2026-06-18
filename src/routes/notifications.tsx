@@ -6,7 +6,7 @@ import { notificationsService, type AdminNotification } from "@/services/notific
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/notifications")({
-  head: () => ({ meta: [{ title: "Notifications | Mr Breado Admin" }] }),
+  head: () => ({ meta: [{ title: "Notifications | Mr. Breado Admin" }] }),
   component: NotificationsPage,
 });
 

@@ -30,18 +30,19 @@ const NAV: { section?: string; items: Item[] }[] = [
     ],
   }] },
   { items: [{ label: "Customers", to: "/customers", icon: Users }] },
-  { section: "RESTAURANT MANAGEMENT", items: [
-    { label: "Owners", to: "/owners", icon: UserCog },
-    { label: "Restaurants", to: "/restaurants", icon: Store },
+  { section: "MR BREADO BUSINESS", items: [
+    { label: "Business Outlets", to: "/business-outlets", icon: Building2 },
+    { label: "Outlet Managers", to: "/owners", icon: UserCog },
   ]},
   { section: "DELIVERY MANAGEMENT", items: [
     { label: "Delivery Boys", to: "/delivery-boys", icon: Bike },
   ]},
   { section: "MENU MANAGEMENT", items: [
     { label: "Foods", to: "/foods", icon: Utensils },
-    { label: "Mr Breado Store", to: "/admin-foods", icon: ChefHat },
+    { label: "Mr. Breado Store", to: "/admin-foods", icon: ChefHat },
     { label: "Cuisine", to: "/cuisine", icon: Soup },
     { label: "Categories", to: "/categories", icon: Layers },
+    { label: "Brands", to: "/brands", icon: Palette },
   ]},
   { section: "ROLE MANAGEMENT", items: [
     { label: "Roles", to: "/roles", icon: Shield },
@@ -63,15 +64,17 @@ const NAV: { section?: string; items: Item[] }[] = [
     { label: "Zones", to: "/zones", icon: MapPin },
   ]},
   { section: "SERVICE MANAGEMENT", items: [
-    { label: "Payout Requests", to: "/payouts", icon: Wallet },
     { label: "Operations", to: "/operations", icon: Activity },
-    { label: "Verification Requests", to: "/service-area-verifications", icon: ShieldCheck },
-    { label: "Mr Breado Restaurant", to: "/mr-breado-restaurant", icon: Building2 },
+    { label: "Outlet Business Control", to: "/business-outlets", icon: Building2 },
     { label: "Customer Messages", to: "/customer-messages", icon: MessageSquare },
     { label: "Admin Profile", to: "/admin-profile", icon: UserCircle },
     { label: "Banner Management", to: "/banners", icon: ImageIcon },
+    { label: "Bite Stories", to: "/stories", icon: Sparkles },
+    { label: "Online Transactions", to: "/online-transactions", icon: CreditCard },
   ]},
-  { section: "SETTINGS", items: [
+  { section: "BUSINESS CONFIG", items: [
+    { label: "API Keys", to: "/api-keys", icon: KeyRound },
+    { label: "Payment Controls", to: "/payment-controls", icon: CreditCard },
     { label: "Settings", to: "/settings", icon: Settings },
   ]},
 ];
@@ -88,8 +91,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
       <div className="flex h-[72px] items-center gap-3 border-b border-sidebar-border px-5">
-        <img src={ADMIN_LOGO_URL} alt="Mr Breado" className="h-10 w-10 rounded-xl object-contain" />
-        <span className="text-lg font-semibold tracking-tight">Mr Breado</span>
+        <img src={ADMIN_LOGO_URL} alt="Mr. Breado" className="h-10 w-10 rounded-xl object-contain" />
+        <span className="text-lg font-semibold tracking-tight">Mr. Breado</span>
       </div>
       <div className="border-b border-sidebar-border p-3">
         <div className="flex items-center gap-2 rounded-md bg-sidebar-accent px-3 py-2 text-sm text-muted-foreground">
@@ -234,7 +237,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
             <img src={ADMIN_LOGO_URL} alt="Admin" className="h-9 w-9 rounded-full object-contain" />
             <div className="hidden text-xs leading-tight sm:block">
               <div className="text-muted-foreground">Hello</div>
-              <div className="font-semibold">Mr Breado Admin</div>
+              <div className="font-semibold">Mr. Breado Admin</div>
             </div>
           </div>
         </header>

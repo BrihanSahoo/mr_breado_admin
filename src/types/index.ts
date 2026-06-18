@@ -136,6 +136,10 @@ export interface SellerOrderResponse {
   createdAt: string;
   updatedAt?: string;
   orderType?: string;
+  outletId?: number;
+  outletName?: string;
+  riderName?: string;
+  riderPhone?: string;
   items?: OrderItem[];
 }
 

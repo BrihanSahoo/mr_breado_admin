@@ -168,7 +168,7 @@ export function OrdersPage({
             <Store className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-base font-bold">Mr Breado order receiving</h3>
+            <h3 className="text-base font-bold">Mr. Breado order receiving</h3>
             <p className="text-sm text-muted-foreground">Current state: <span className="font-semibold text-foreground">{isRestaurantOpen ? "Open" : "Closed"}</span>. Use this to stop or resume new restaurant orders.</p>
           </div>
         </div>
@@ -220,6 +220,7 @@ export function OrdersPage({
               <tr className="border-b border-border bg-background/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <th className="px-4 py-3 font-medium">Order #</th>
                 <th className="px-4 py-3 font-medium">Customer</th>
+                <th className="px-4 py-3 font-medium">Outlet</th>
                 <th className="px-4 py-3 font-medium">Payment</th>
                 <th className="px-4 py-3 font-medium">Total</th>
                 <th className="px-4 py-3 font-medium">Status</th>
@@ -231,13 +232,13 @@ export function OrdersPage({
               {isLoading ? (
                 Array.from({ length: 6 }).map((_, i) => (
                   <tr key={i} className="border-b border-border/60">
-                    <td colSpan={7} className="px-4 py-4"><div className="h-5 w-full animate-pulse rounded bg-primary/10" /></td>
+                    <td colSpan={8} className="px-4 py-4"><div className="h-5 w-full animate-pulse rounded bg-primary/10" /></td>
                   </tr>
                 ))
               ) : error ? (
-                <tr><td colSpan={7} className="px-4 py-16 text-center text-muted-foreground">Orders are temporarily unavailable. Please refresh after a moment.</td></tr>
+                <tr><td colSpan={8} className="px-4 py-16 text-center text-muted-foreground">Orders are temporarily unavailable. Please refresh after a moment.</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={7} className="px-4 py-16 text-center text-muted-foreground">No orders found</td></tr>
+                <tr><td colSpan={8} className="px-4 py-16 text-center text-muted-foreground">No orders found</td></tr>
               ) : (
                 items.map((o) => {
                   const total = asNumber(o.grandTotal);
@@ -249,6 +250,7 @@ export function OrdersPage({
                     <tr key={o.id} className={`border-b border-border/60 transition ${active ? "bg-primary/5 shadow-[inset_4px_0_0_hsl(var(--primary)),0_0_24px_rgba(249,115,22,0.10)]" : "hover:bg-accent/30"}`}>
                       <td className="px-4 py-4 font-mono text-primary"><div className="font-semibold">{o.orderNumber || `#${o.id}`}</div>{active && <div className="mt-1 inline-flex rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase text-primary">Active</div>}</td>
                       <td className="px-4 py-4"><div className="font-medium">{o.customerName || "Guest"}</div><div className="text-xs text-muted-foreground">{o.customerMobile || "—"}</div></td>
+                      <td className="px-4 py-4"><div className="font-semibold">{(o as any).outletName || "Mr. Breado Outlet"}</div><div className="text-xs text-muted-foreground">Outlet #{(o as any).outletId || "—"}</div></td>
                       <td className="px-4 py-4 text-xs">{payment}</td>
                       <td className="px-4 py-4 font-semibold">{formatCurrency(total)}</td>
                       <td className="px-4 py-4"><StatusBadge status={o.statusLabel || o.status || "PENDING"} /></td>
@@ -280,7 +282,8 @@ export function OrdersPage({
               <div className="p-8 text-muted-foreground">Order details are temporarily unavailable. Please try again.</div>
             ) : orderDetail.data ? (
               <div className="space-y-6 p-6">
-                <div className="grid gap-4 lg:grid-cols-3">
+                <div className="grid gap-4 lg:grid-cols-4">
+                  <InfoCard icon={<Store className="h-4 w-4" />} title="Outlet" lines={[(orderDetail.data as any).outletName || "Mr. Breado Outlet", `Outlet #${(orderDetail.data as any).outletId || "—"}`, (orderDetail.data as any).riderName ? `Rider: ${(orderDetail.data as any).riderName}` : ""]} />
                   <InfoCard icon={<Phone className="h-4 w-4" />} title="Customer" lines={[orderDetail.data.customerName || "Guest", orderDetail.data.customerMobile || "No mobile", orderDetail.data.customerEmail || ""]} />
                   <InfoCard icon={<ReceiptText className="h-4 w-4" />} title="Payment" lines={[[orderDetail.data.paymentType, orderDetail.data.paymentStatus].filter(Boolean).join(" · ") || "—", `Status: ${orderDetail.data.statusLabel || orderDetail.data.status || "—"}`]} />
                   <InfoCard icon={<IndianRupee className="h-4 w-4" />} title="Grand Total" lines={[formatCurrency(orderDetail.data.grandTotal), `Subtotal: ${formatCurrency(orderDetail.data.subtotal)}`]} big />

@@ -4,7 +4,7 @@ import { DataTable } from "@/components/admin/data-table";
 import type { Column } from "@/components/admin/data-table";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { useCategories, useCategorySummary } from "@/hooks/queries/use-categories";
-import { useState } from "react";
+import { ChangeEvent, useState } from "react";
 import { useCreateCategory, useUpdateCategory, useDeleteCategory, useToggleCategoryStatus } from "@/hooks/mutations/use-category-mutations";
 import type { CategoryResponse } from "@/services/categories.service";
 import { Layers, Plus, Pencil, Trash2, Tag } from "lucide-react";
@@ -13,6 +13,8 @@ export const Route = createFileRoute("/categories")({
   head: () => ({ meta: [{ title: "Categories | Go4Food Admin" }] }),
   component: CategoriesPage,
 });
+
+function imageValue(value: unknown): string { if (typeof value === 'string') return value; if (value && typeof value === 'object') return String((value as any).url ?? (value as any).secureUrl ?? ''); return ''; }
 
 function CategoriesPage() {
   type Row = CategoryResponse;
@@ -28,9 +30,23 @@ function CategoriesPage() {
   const [editing, setEditing] = useState<Row | null>(null);
   const [title, setTitle] = useState("");
   const [icon, setIcon] = useState("");
+  const [slug, setSlug] = useState("");
+  const [preview, setPreview] = useState("");
   const [status, setStatus] = useState("ACTIVE");
+
+  const readImageFile = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const value = String(reader.result || "");
+      setIcon(value);
+      setPreview(value);
+    };
+    reader.readAsDataURL(file);
+  };
   const cols: Column<Row>[] = [
-    { key: "img", header: "Image", render: r => (r.image && String(r.image).startsWith("http") ? <img src={r.image} className="h-10 w-10 rounded-lg object-cover" /> : <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-xl">{r.icon ?? r.image ?? '🍽️'}</div>) },
+    { key: "img", header: "Image", render: r => { const img = imageValue(r.imageUrl ?? r.image ?? r.icon); return img && (img.startsWith('http') || img.startsWith('data:')) ? <img src={img} className="h-10 w-10 rounded-lg object-cover" /> : <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-xl">{img || '🍽️'}</div>; } },
     { key: "name", header: "Name", render: r => <span className="font-medium">{r.title ?? r.name}</span> },
     { key: "sub", header: "Sub Categories", render: r => <span className="inline-flex items-center gap-1 rounded-full bg-info/15 px-2 py-0.5 text-xs text-info"><Tag className="h-3 w-3"/>{r.subCategoryCount ?? r.productCount ?? 0}</span> },
     { key: "status", header: "Status", render: r => <StatusBadge status={r.status} /> },
@@ -40,7 +56,7 @@ function CategoriesPage() {
           <input type="checkbox" checked={(r.status === 'ACTIVE') || r.active === true || r.enabled === true} onChange={(e) => toggle.mutate({ id: r.id, status: e.target.checked ? 'ACTIVE' : 'INACTIVE' })} className="peer sr-only" />
           <div className="relative h-5 w-9 rounded-full bg-muted transition peer-checked:bg-primary after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:transition peer-checked:after:translate-x-4" />
         </label>
-        <button onClick={() => { setEditing(r); setTitle(r.title ?? r.name ?? ""); setIcon(r.icon ?? r.image ?? ""); setStatus(r.status ?? "ACTIVE"); setIsOpen(true); }} className="rounded p-1.5 text-primary hover:bg-primary/10"><Pencil className="h-4 w-4"/></button>
+        <button onClick={() => { setEditing(r); setTitle(r.title ?? r.name ?? ""); setSlug(r.slug ?? ""); setIcon(imageValue(r.imageUrl ?? r.image ?? r.icon)); setPreview(imageValue(r.imageUrl ?? r.image ?? r.icon)); setStatus(r.status ?? "ACTIVE"); setIsOpen(true); }} className="rounded p-1.5 text-primary hover:bg-primary/10"><Pencil className="h-4 w-4"/></button>
         <button onClick={() => del.mutate(r.id)} className="rounded p-1.5 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4"/></button>
       </div>
     )},
@@ -48,7 +64,7 @@ function CategoriesPage() {
   return (<>
     <PageHeader title="Categories" icon={<Layers className="h-5 w-5"/>}
       breadcrumbs={[{label:"Dashboard",to:"/"},{label:"Categories"}]}
-      actions={<button onClick={() => { setEditing(null); setTitle(""); setIcon(""); setStatus("ACTIVE"); setIsOpen(true); }} className="inline-flex items-center gap-1.5 rounded-md gradient-primary px-3 py-1.5 text-sm font-medium text-primary-foreground shadow-glow"><Plus className="h-4 w-4"/> Add Category</button>} />
+      actions={<button onClick={() => { setEditing(null); setTitle(""); setSlug(""); setIcon(""); setPreview(""); setStatus("ACTIVE"); setIsOpen(true); }} className="inline-flex items-center gap-1.5 rounded-md gradient-primary px-3 py-1.5 text-sm font-medium text-primary-foreground shadow-glow"><Plus className="h-4 w-4"/> Add Category</button>} />
     <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {[
         {label:"Total Categories",value:summary?.totalCategories ?? data?.total ?? items.length,color:"bg-primary/15 text-primary"},
@@ -69,13 +85,16 @@ function CategoriesPage() {
         <div className="w-full max-w-md rounded bg-card p-6">
           <h3 className="mb-4 text-lg font-semibold">{editing ? "Edit Category" : "Add Category"}</h3>
           <div className="flex flex-col gap-3">
-            <label className="text-sm">Name<input value={title} onChange={e => setTitle(e.target.value)} className="mt-1 w-full rounded border px-2 py-1" /></label>
-            <label className="text-sm">Icon / Image<input value={icon} onChange={e => setIcon(e.target.value)} className="mt-1 w-full rounded border px-2 py-1" placeholder="emoji or url" /></label>
+            <label className="text-sm">Name<input value={title} onChange={e => { setTitle(e.target.value); if (!slug) setSlug(e.target.value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")); }} className="mt-1 w-full rounded border px-2 py-1" /></label>
+            <label className="text-sm">Slug<input value={slug} onChange={e => setSlug(e.target.value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""))} className="mt-1 w-full rounded border px-2 py-1" placeholder="pizza, cakes, sandwiches" /></label>
+            <label className="text-sm">Category Image from device<input type="file" accept="image/*" onChange={readImageFile} className="mt-1 w-full rounded border px-2 py-1" /></label>
+            {preview ? <img src={preview} className="h-24 w-24 rounded-xl object-cover border" /> : null}
+            <label className="text-sm">Image fallback URL or emoji<input value={icon && !icon.startsWith("data:") ? icon : ""} onChange={e => { setIcon(e.target.value); setPreview(e.target.value); }} className="mt-1 w-full rounded border px-2 py-1" placeholder="optional fallback only" /></label>
             <label className="text-sm">Status<select value={status} onChange={e => setStatus(e.target.value)} className="mt-1 w-full rounded border px-2 py-1"><option value="ACTIVE">ACTIVE</option><option value="INACTIVE">INACTIVE</option></select></label>
             <div className="mt-4 flex justify-end gap-2">
               <button onClick={() => setIsOpen(false)} className="rounded-md px-3 py-1">Cancel</button>
               <button onClick={() => {
-                const payload: any = { title, name: title, icon, image: icon, status, active: status === "ACTIVE", enabled: status === "ACTIVE" };
+                const payload: any = { title, name: title, slug, icon, image: icon, imageUrl: icon, dataUrl: icon, status, active: status === "ACTIVE", enabled: status === "ACTIVE" };
                 if (editing) {
                   update.mutate({ id: editing.id, payload });
                 } else {

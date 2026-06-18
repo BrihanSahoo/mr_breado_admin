@@ -8,7 +8,7 @@ export type ServiceAreaSettings = {
   enabled?: boolean;
 };
 
-export type VerificationDocument = { name?: string; type?: string; url?: string; fileName?: string; fileUrl?: string; documentType?: string };
+export type VerificationDocument = { name?: string; type?: string; url?: string; fileName?: string; fileUrl?: string; viewUrl?: string; downloadUrl?: string; originalName?: string; documentType?: string };
 
 export type VerificationRequest = {
   id: number | string;
@@ -57,8 +57,22 @@ function asArray(data: any): any[] {
   return [];
 }
 
+function parsePayload(raw: any): Record<string, any> {
+  const value = raw?.submittedPayload ?? raw?.submitted_payload ?? raw?.payload;
+  if (!value) return {};
+  if (typeof value === "object") return value;
+  try { return JSON.parse(String(value)); } catch { return {}; }
+}
+
+function firstNonEmpty(...values: any[]) {
+  for (const value of values) {
+    if (value !== undefined && value !== null && String(value).trim() !== "") return value;
+  }
+  return undefined;
+}
+
 function normalizeDocuments(raw: any): VerificationDocument[] {
-  if (Array.isArray(raw?.documents)) return raw.documents;
+  if (Array.isArray(raw?.documents)) return raw.documents.map((d: any) => ({ ...d, url: d.url || d.viewUrl || d.view_url || d.downloadUrl || d.download_url, fileUrl: d.fileUrl || d.viewUrl || d.view_url || d.downloadUrl || d.download_url, name: d.name || d.originalName || d.original_name || d.documentType || d.document_type }));
   const docs: VerificationDocument[] = [];
   const fields = [
     ["gstCertificate", "GST Certificate"], ["panCard", "PAN Card"], ["fssaiLicense", "FSSAI License"],
@@ -74,13 +88,20 @@ function normalizeDocuments(raw: any): VerificationDocument[] {
 }
 
 function normalizeRequest(raw: any, source: VerificationRequest["source"]): VerificationRequest {
+  const payload = parsePayload(raw);
   const entityType = String(
-    raw?.entityType ?? raw?.entity_type ?? raw?.targetType ?? raw?.target_type ?? raw?.requestType ?? raw?.request_type ??
-      (source === "RIDER" ? "RIDER" : source === "RESTAURANT" ? "RESTAURANT" : "")
+    firstNonEmpty(raw?.entityType, raw?.entity_type, raw?.requesterType, raw?.requester_type, raw?.targetType, raw?.target_type, raw?.requestType, raw?.request_type,
+      source === "RIDER" ? "RIDER" : source === "RESTAURANT" ? "RESTAURANT" : "")
   ).toUpperCase();
 
   const targetId = raw?.targetId ?? raw?.target_id;
   const requestId = raw?.id ?? raw?.requestId ?? raw?.request_id;
+  const docs = normalizeDocuments(raw);
+
+  const fullName = firstNonEmpty(raw?.fullName, raw?.applicantName, raw?.applicant_name, raw?.ownerName, raw?.owner_name, raw?.driverName, raw?.driver_name, raw?.riderName, raw?.rider_name, raw?.userName, raw?.user_name, payload.fullName, payload.name, payload.driverName, payload.riderName, payload.ownerName);
+  const businessName = firstNonEmpty(raw?.businessName, raw?.business_name, raw?.restaurantName, raw?.restaurant_name, payload.businessName, payload.restaurantName, payload.storeName);
+  const mobile = firstNonEmpty(raw?.contactMobile, raw?.contact_mobile, raw?.mobile, raw?.phone, raw?.userMobile, raw?.user_mobile, raw?.driverMobile, raw?.driver_mobile, payload.mobile, payload.phone, payload.phoneNumber, payload.contactMobile);
+  const address = firstNonEmpty(raw?.address, raw?.note, raw?.notes, payload.address, payload.fullAddress, payload.residentialAddress, payload.restaurantAddress, payload.businessAddress);
 
   return {
     ...raw,
@@ -89,14 +110,26 @@ function normalizeRequest(raw: any, source: VerificationRequest["source"]): Veri
     requestType: raw?.requestType ?? raw?.request_type ?? entityType,
     restaurantId: raw?.restaurantId ?? raw?.restaurant_id ?? (entityType.includes("RESTAURANT") ? targetId : undefined),
     riderId: raw?.riderId ?? raw?.rider_id ?? raw?.driverId ?? raw?.driver_id ?? raw?.profileId ?? raw?.profile_id ?? (entityType.includes("RIDER") || entityType.includes("DRIVER") ? targetId : undefined),
-    applicantName: raw?.applicantName ?? raw?.applicant_name ?? raw?.ownerName ?? raw?.owner_name ?? raw?.driverName ?? raw?.driver_name ?? raw?.riderName ?? raw?.rider_name ?? raw?.name,
-    businessName: raw?.businessName ?? raw?.business_name ?? raw?.restaurantName ?? raw?.restaurant_name ?? raw?.name,
-    contactMobile: raw?.contactMobile ?? raw?.contact_mobile ?? raw?.mobile ?? raw?.driverMobile ?? raw?.driver_mobile ?? raw?.phoneNumber ?? raw?.phone_number,
+    applicantName: fullName ?? businessName ?? "Verification request",
+    businessName,
+    restaurantName: firstNonEmpty(raw?.restaurantName, raw?.restaurant_name, businessName),
+    riderName: entityType.includes("RIDER") || entityType.includes("DRIVER") ? fullName : raw?.riderName,
+    driverName: entityType.includes("RIDER") || entityType.includes("DRIVER") ? fullName : raw?.driverName,
+    contactMobile: mobile,
+    mobile,
     status: raw?.status ?? raw?.verificationStatus ?? raw?.verification_status ?? "PENDING",
-    note: raw?.note ?? raw?.applicantNote ?? raw?.applicant_note,
+    note: firstNonEmpty(raw?.note, raw?.notes, raw?.applicantNote, raw?.applicant_note, payload.notes, payload.note, payload.message),
+    address,
+    gstin: firstNonEmpty(raw?.gstin, raw?.gstNumber, raw?.gst_number, payload.gstin, payload.gstNumber, payload.gst),
+    panNumber: firstNonEmpty(raw?.panNumber, raw?.pan_number, payload.panNumber, payload.pan, payload.panCardNo),
+    fssaiNumber: firstNonEmpty(raw?.fssaiNumber, raw?.fssai_number, payload.fssaiNumber, payload.fssaiLicense, payload.fssai),
+    aadhaarNumber: firstNonEmpty(raw?.aadhaarNumber, raw?.aadhaar_number, raw?.aadharNumber, raw?.aadhar_number, payload.aadhaarNumber, payload.aadharNumber, payload.aadhaarNo, payload.aadharNo),
+    drivingLicenseNumber: firstNonEmpty(raw?.drivingLicenseNumber, raw?.driving_license_number, payload.drivingLicenseNumber, payload.drivingLicense, payload.licenseNumber, payload.dlNumber),
+    vehicleRegistrationNumber: firstNonEmpty(raw?.vehicleRegistrationNumber, raw?.vehicle_registration_number, payload.vehicleRegistrationNumber, payload.vehicleRcNumber, payload.vehicleRc, payload.vehicleNumber, payload.rcNumber),
+    rejectionReason: raw?.rejectionReason ?? raw?.rejection_reason,
     createdAt: raw?.createdAt ?? raw?.created_at,
     updatedAt: raw?.updatedAt ?? raw?.updated_at,
-    documents: normalizeDocuments(raw),
+    documents: docs,
     source: entityType.includes("RESTAURANT") ? "RESTAURANT" : entityType.includes("RIDER") || entityType.includes("DRIVER") ? "RIDER" : source,
   };
 }
@@ -154,51 +187,48 @@ export const serviceAreaVerificationService = {
     const merged = (await Promise.all(calls)).flat();
     const unique = new Map<string, VerificationRequest>();
     merged.forEach((x) => {
-      const key = `request-${x.id ?? ""}-${x.entityType ?? x.requestType ?? ""}`;
-      if (x.id !== undefined && x.id !== null) unique.set(key, x);
+      const id = x.id ?? `${x.source}-${x.restaurantId ?? ""}-${x.riderId ?? ""}-${x.contactMobile ?? ""}`;
+      const key = `request-${id}`;
+      if (id !== undefined && id !== null) unique.set(key, x);
     });
     return filterStatus(Array.from(unique.values()), status);
   },
   async approve(request: VerificationRequest | number | string, note?: string) {
     const req = typeof request === "object" ? request : { id: request } as VerificationRequest;
-    const source = String(req.source ?? req.entityType ?? req.requestType ?? "").toUpperCase();
-    const entity = String(req.entityType ?? req.requestType ?? "").toUpperCase();
-    if (source.includes("RESTAURANT") || entity.includes("RESTAURANT")) {
-      const id = req.restaurantId ?? req.id;
-      try { return unwrap(await api.post(endpoints.admin.restaurantJoinApprove(id), { note })); }
-      catch { return unwrap(await api.patch(endpoints.admin.restaurantVerificationStatus(id), null, { params: { status: "VERIFIED" } })); }
+    try { return unwrap(await api.post(endpoints.admin.verificationApprove(req.id), { note })); }
+    catch {
+      const source = String(req.source ?? req.entityType ?? req.requestType ?? "").toUpperCase();
+      const entity = String(req.entityType ?? req.requestType ?? "").toUpperCase();
+      if (source.includes("RESTAURANT") || entity.includes("RESTAURANT")) {
+        const id = req.restaurantId ?? req.id;
+        try { return unwrap(await api.post(endpoints.admin.restaurantJoinApprove(id), { note })); }
+        catch { return unwrap(await api.patch(endpoints.admin.restaurantVerificationStatus(id), null, { params: { status: "VERIFIED" } })); }
+      }
+      if (source.includes("RIDER") || source.includes("DRIVER") || entity.includes("RIDER") || entity.includes("DRIVER")) {
+        const id = req.riderId ?? req.driverId ?? req.id;
+        try { return unwrap(await api.post(endpoints.admin.driverApprove(id), { note })); }
+        catch { return unwrap(await api.patch(endpoints.admin.riderVerificationStatus(id), null, { params: { status: "VERIFIED" } })); }
+      }
+      throw new Error("Unable to approve verification request.");
     }
-    if (source.includes("RIDER") || source.includes("DRIVER") || entity.includes("RIDER") || entity.includes("DRIVER")) {
-      const id = req.riderId ?? req.driverId ?? req.id;
-      try { return unwrap(await api.post(endpoints.admin.driverApprove(id), { note })); }
-      catch { return unwrap(await api.patch(endpoints.admin.riderVerificationStatus(id), null, { params: { status: "VERIFIED" } })); }
-    }
-    const res = await api.post(endpoints.admin.verificationApprove(req.id), { note });
-    return unwrap(res);
   },
   async reject(request: VerificationRequest | number | string, reason: string) {
     const req = typeof request === "object" ? request : { id: request } as VerificationRequest;
-    const source = String(req.source ?? req.entityType ?? req.requestType ?? "").toUpperCase();
-    const entity = String(req.entityType ?? req.requestType ?? "").toUpperCase();
-    if (source.includes("RESTAURANT") || entity.includes("RESTAURANT")) {
-      const id = req.restaurantId ?? req.id;
-      try { return unwrap(await api.post(endpoints.admin.restaurantJoinReject(id), { reason, note: reason })); }
-      catch { return unwrap(await api.patch(endpoints.admin.restaurantVerificationStatus(id), null, { params: { status: "REJECTED" } })); }
+    try { return unwrap(await api.post(endpoints.admin.verificationReject(req.id), { reason, note: reason })); }
+    catch {
+      const source = String(req.source ?? req.entityType ?? req.requestType ?? "").toUpperCase();
+      const entity = String(req.entityType ?? req.requestType ?? "").toUpperCase();
+      if (source.includes("RESTAURANT") || entity.includes("RESTAURANT")) {
+        const id = req.restaurantId ?? req.id;
+        try { return unwrap(await api.post(endpoints.admin.restaurantJoinReject(id), { reason, note: reason })); }
+        catch { return unwrap(await api.patch(endpoints.admin.restaurantVerificationStatus(id), { reason }, { params: { status: "REJECTED" } })); }
+      }
+      if (source.includes("RIDER") || source.includes("DRIVER") || entity.includes("RIDER") || entity.includes("DRIVER")) {
+        const id = req.riderId ?? req.driverId ?? req.id;
+        try { return unwrap(await api.post(endpoints.admin.driverReject(id), { reason, note: reason })); }
+        catch { return unwrap(await api.patch(endpoints.admin.riderVerificationStatus(id), { reason }, { params: { status: "REJECTED" } })); }
+      }
+      throw new Error("Unable to reject verification request.");
     }
-    if (source.includes("RIDER") || source.includes("DRIVER") || entity.includes("RIDER") || entity.includes("DRIVER")) {
-      const id = req.riderId ?? req.driverId ?? req.id;
-      try { return unwrap(await api.post(endpoints.admin.driverReject(id), { reason, note: reason })); }
-      catch { return unwrap(await api.patch(endpoints.admin.riderVerificationStatus(id), null, { params: { status: "REJECTED" } })); }
-    }
-    const res = await api.post(endpoints.admin.verificationReject(req.id), { reason, note: reason });
-    return unwrap(res);
-  },
-  async setRestaurantStatus(id: number | string, status: string) {
-    const res = await api.patch(endpoints.admin.restaurantVerificationStatus(id), null, { params: { status } });
-    return unwrap(res);
-  },
-  async setRiderStatus(id: number | string, status: string) {
-    const res = await api.patch(endpoints.admin.riderVerificationStatus(id), null, { params: { status } });
-    return unwrap(res);
   },
 };

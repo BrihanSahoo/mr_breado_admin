@@ -13,7 +13,7 @@ export interface RestaurantsQuery {
 export const restaurantsService = {
   list: (params: RestaurantsQuery = {}) =>
     request<PageResponse<AdminRestaurantResponse>>({
-      url: endpoints.admin.restaurants,
+      url: endpoints.admin.franchiseOutlets || "/admin/outlets",
       method: "GET",
       params: {
         page: params.page ?? 1,
@@ -23,12 +23,12 @@ export const restaurantsService = {
       },
     }),
   details: async (id: number | string) => {
-    const res = await api.get(endpoints.admin.restaurantDetails(id));
+    const res = await api.get(`/admin/outlets/${id}`);
     return (res.data?.data ?? res.data) as AdminRestaurantResponse;
   },
   setVerificationStatus: async (id: number | string, status: "VERIFIED" | "UNVERIFIED" | "REJECTED") => {
     try {
-      const res = await api.patch(endpoints.admin.restaurantVerificationStatus(id), null, { params: { status } });
+      const res = await api.put(`/admin/outlets/${id}`, { isActive: status === "VERIFIED" });
       return (res.data?.data ?? res.data) as AdminRestaurantResponse;
     } catch {
       const res = await api.post(status === "VERIFIED" ? endpoints.admin.restaurantJoinApprove(id) : endpoints.admin.restaurantJoinReject(id), { reason: status === "REJECTED" ? "Rejected by admin" : undefined });

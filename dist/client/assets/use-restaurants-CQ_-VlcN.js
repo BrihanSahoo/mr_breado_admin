@@ -1,0 +1,1 @@
+import{i as e,k as r}from"./index-MNbwVuNI.js";import{r as t}from"./restaurants.service-Cox4LLxo.js";const a={all:["restaurants"],list:s=>["restaurants","list",s]};function n(s){return e({queryKey:a.list(s),queryFn:()=>t.list(s),placeholderData:r,staleTime:1e4})}export{a as r,n as u};

@@ -13,7 +13,16 @@ function toFormData(payload: Record<string, unknown> | FormData): FormData {
 }
 
 export const mrBreadoService = {
-  restaurant: () => request<any>({ url: endpoints.admin.mrBreado.restaurant, method: "GET" }),
+  restaurant: async () => {
+    const paths = [endpoints.admin.mrBreado.restaurant, '/admin/outlets/primary', '/admin/primary-outlet'];
+    for (const url of paths) {
+      try { const result = await request<any>({ url, method: 'GET' }); if (result) return result; }
+      catch (error: any) { if (error?.status !== 404) throw error; }
+    }
+    const result = await request<any>({ url: '/admin/outlets', method: 'GET' });
+    const rows = Array.isArray(result) ? result : (result?.items ?? result?.outlets ?? []);
+    return rows.find((x:any) => x.primary || x.isPrimary) ?? rows[0] ?? null;
+  },
   updateRestaurant: (data: Record<string, unknown> | FormData) => request<any>({
     url: endpoints.admin.mrBreado.restaurant,
     method: "PUT",

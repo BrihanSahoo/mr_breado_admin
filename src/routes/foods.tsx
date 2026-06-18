@@ -3,6 +3,8 @@ import { PageHeader } from "@/components/admin/page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { Utensils, Plus, Pencil, Trash2, Star, Loader2, ChevronLeft, ChevronRight, Download, FileSpreadsheet } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/api/client";
 import { useProducts } from "@/hooks/queries/use-products";
 import { productsService } from "@/services/products.service";
 import {
@@ -13,8 +15,8 @@ import {
 } from "@/hooks/mutations/use-product-mutations";
 
 export const Route = createFileRoute("/foods")({
-  head: () => ({ meta: [{ title: "Foods | Go4Food Admin" }] }),
-  component: () => <FoodsPage title="Foods" source="seller" />,
+  head: () => ({ meta: [{ title: "Foods | Mr. Breado Admin" }] }),
+  component: () => <FoodsPage title="Global Foods" source="admin" />,
 });
 
 export function FoodsPage({ title, source = "admin" }: { title: string; source?: "seller" | "admin" }) {
@@ -27,16 +29,64 @@ export function FoodsPage({ title, source = "admin" }: { title: string; source?:
   const items = data?.items ?? [];
   const totalPages = data?.total_pages ?? 1;
   const [showForm, setShowForm] = useState(false);
+  const categoriesQuery = useQuery({ queryKey: ["admin-food-categories-for-form"], queryFn: async () => {
+    const res = await api.get("/admin/categories", { params: { page: 1, perPage: 200, _t: Date.now() } });
+    const d = res.data?.data ?? res.data;
+    const arr = Array.isArray(d) ? d : Array.isArray(d?.items) ? d.items : Array.isArray(d?.categories) ? d.categories : [];
+    return arr
+      .filter((x:any) => x.active !== false && String(x.status ?? "ACTIVE").toUpperCase() !== "INACTIVE")
+      .map((x:any) => ({ id: String(x._id ?? x.mongoId ?? x.id), name: x.name ?? x.title ?? x.categoryName ?? x.category_name }))
+      .filter((x:any) => x.id && x.name);
+  }, staleTime: 30000 });
   const [editing, setEditing] = useState<any | null>(null);
-  const blankForm = { title: "", subtitle: "", description: "", price: "", discountPrice: "", categoryName: "", foodType: "", stockQuantity: "", isVeg: true, isAvailable: true, isBestseller: false, smallSizeExtra: "", mediumSizeExtra: "", largeSizeExtra: "", cake500gmExtra: "", cake1kgExtra: "", cake15kgExtra: "", cake2kgExtra: "", cakeMessageEnabled: false, cakeMessageCharge: "", customWeightEnabled: false, image: null as File | null };
+  const brandsQuery = useQuery({ queryKey:["admin-brands-for-form"], queryFn: async()=>{ const res=await api.get("/admin/brands"); const d=res.data?.data??res.data; return (Array.isArray(d)?d:(d?.items??[])).filter((x:any)=>x.active!==false).map((x:any)=>({id:String(x.id??x._id),name:x.name,slug:x.slug})); }});
+  const blankForm = { brandId: "", brandName: "", title: "", subtitle: "", description: "", price: "", discountPrice: "", categoryId: "", categoryName: "", foodType: "VEG", stockQuantity: "", isVeg: true, isAvailable: true, isBestseller: false, smallSizeExtra: "", mediumSizeExtra: "", largeSizeExtra: "", cake500gmExtra: "", cake1kgExtra: "", cake15kgExtra: "", cake2kgExtra: "", cakeMessageEnabled: false, cakeMessageCharge: "", customWeightEnabled: false, image: null as File | null };
   const [form, setForm] = useState(blankForm);
 
+  const applyProductToForm = (product: any) => {
+    const pick = (...vals: any[]) => vals.find((v) => v !== undefined && v !== null && String(v).trim() !== "") ?? "";
+    setForm({
+      ...blankForm,
+      brandId: String(pick(product.brandId?._id,product.brandId,product.brand_id,product.brand?.id,product.brand?._id)),
+      brandName: pick(product.brandName,product.brand_name,product.brand?.name),
+      title: pick(product.title, product.name, product.productName, product.product_name, product.foodName, product.food_name),
+      subtitle: pick(product.subtitle, product.shortDescription, product.short_description),
+      description: pick(product.description, product.details, product.subtitle),
+      price: String(pick(product.price, product.basePrice, product.base_price, product.sellingPrice, product.selling_price)),
+      discountPrice: String(pick(product.discountPrice, product.discount_price, product.discountedPrice, product.discounted_price, product.effectivePrice, product.effective_price)),
+      categoryId: String(pick(product.categoryId?._id, product.categoryId, product.category_id, product.category?.id, product.category?._id)),
+      categoryName: pick(product.categoryName, product.category_name, product.foodCategoryName, product.menuCategoryName, product.category?.name, product.category?.title),
+      foodType: pick(product.foodType, product.food_type, product.type, product.categoryName, product.category_name),
+      stockQuantity: String(pick(product.stockQuantity, product.stock_quantity, product.stock, product.quantity)),
+      isVeg: Boolean(product.isVeg ?? product.veg ?? product.is_veg ?? true),
+      isAvailable: Boolean(product.isAvailable ?? product.available ?? product.is_available ?? true),
+      isBestseller: Boolean(product.isBestseller ?? product.bestseller ?? product.is_bestseller ?? product.isFeatured ?? product.featured ?? false),
+      smallSizeExtra: String(pick(product.smallSizeExtra, product.small_size_extra, product.smallPrice, product.small_price)),
+      mediumSizeExtra: String(pick(product.mediumSizeExtra, product.medium_size_extra, product.mediumPrice, product.medium_price)),
+      largeSizeExtra: String(pick(product.largeSizeExtra, product.large_size_extra, product.largePrice, product.large_price)),
+      cake500gmExtra: String(pick(product.cake500gmExtra, product.cake_500gm_extra, product.cake500gmPrice, product.cake_500gm_price)),
+      cake1kgExtra: String(pick(product.cake1kgExtra, product.cake_1kg_extra, product.cake1kgPrice, product.cake_1kg_price)),
+      cake15kgExtra: String(pick(product.cake15kgExtra, product.cake1_5kgExtra, product.cake_1_5kg_extra, product.cake15kgPrice, product.cake_1_5kg_price)),
+      cake2kgExtra: String(pick(product.cake2kgExtra, product.cake_2kg_extra, product.cake2kgPrice, product.cake_2kg_price)),
+      cakeMessageEnabled: Boolean(product.cakeMessageEnabled ?? product.cake_message_enabled ?? false),
+      cakeMessageCharge: String(pick(product.cakeMessageCharge, product.cake_message_charge)),
+      customWeightEnabled: Boolean(product.customWeightEnabled ?? product.custom_weight_enabled ?? false),
+      image: null,
+    });
+  };
+
   useEffect(() => {
+    let cancelled = false;
     if (editing) {
-      setForm({ ...blankForm, title: editing.title ?? editing.name ?? "", subtitle: editing.subtitle ?? "", description: editing.description ?? "", price: String(editing.price ?? ""), discountPrice: String(editing.discountPrice ?? editing.discount_price ?? ""), categoryName: editing.categoryName ?? editing.category_name ?? editing.category ?? "", foodType: editing.foodType ?? editing.food_type ?? "", stockQuantity: String(editing.stockQuantity ?? editing.stock_quantity ?? ""), isVeg: Boolean(editing.isVeg ?? editing.veg ?? editing.is_veg ?? true), isAvailable: Boolean(editing.isAvailable ?? editing.available ?? editing.is_available ?? true), isBestseller: Boolean(editing.isBestseller ?? editing.bestseller ?? editing.is_bestseller ?? false), smallSizeExtra: String(editing.smallSizeExtra ?? editing.small_size_extra ?? ""), mediumSizeExtra: String(editing.mediumSizeExtra ?? editing.medium_size_extra ?? ""), largeSizeExtra: String(editing.largeSizeExtra ?? editing.large_size_extra ?? ""), cake500gmExtra: String(editing.cake500gmExtra ?? editing.cake_500gm_extra ?? ""), cake1kgExtra: String(editing.cake1kgExtra ?? editing.cake_1kg_extra ?? ""), cake15kgExtra: String(editing.cake15kgExtra ?? editing.cake1_5kgExtra ?? editing.cake_1_5kg_extra ?? ""), cake2kgExtra: String(editing.cake2kgExtra ?? editing.cake_2kg_extra ?? ""), cakeMessageEnabled: Boolean(editing.cakeMessageEnabled ?? editing.cake_message_enabled ?? false), cakeMessageCharge: String(editing.cakeMessageCharge ?? editing.cake_message_charge ?? ""), customWeightEnabled: Boolean(editing.customWeightEnabled ?? editing.custom_weight_enabled ?? false), image: null });
+      applyProductToForm(editing);
+      productsService.detail(editing.id, source).then((detail) => {
+        if (!cancelled) applyProductToForm({ ...editing, ...detail });
+      }).catch(() => {});
     } else {
       setForm(blankForm);
     }
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editing]);
 
   return (
@@ -100,8 +150,8 @@ export function FoodsPage({ title, source = "admin" }: { title: string; source?:
                   <tr key={p.id} className="border-b border-border/60 hover:bg-accent/30">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        {p.image ? (
-                          <img src={p.image} alt={p.title} className="h-10 w-10 rounded-lg object-cover" />
+                        {(p.image || p.imageUrl) ? (
+                          <img src={p.image || p.imageUrl} alt={p.title} className="h-10 w-10 rounded-lg object-cover" />
                         ) : (
                           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent">🍽️</div>
                         )}
@@ -111,7 +161,7 @@ export function FoodsPage({ title, source = "admin" }: { title: string; source?:
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">{typeof p.restaurant === 'object' ? (p.restaurant?.name ?? '—') : (p.restaurant ?? '—')}</td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">{p.restaurantName ?? p.restaurant_name ?? (typeof p.restaurant === 'object' ? (p.restaurant?.name ?? '—') : (p.restaurant ?? '—'))}</td>
                     <td className="px-4 py-3 font-semibold">
                       ₹{Number(p.effectivePrice ?? p.effective_price ?? p.price ?? 0).toFixed(2)}
                     </td>
@@ -132,8 +182,12 @@ export function FoodsPage({ title, source = "admin" }: { title: string; source?:
                         >
                           <Star className="h-4 w-4" />
                         </button>
-                        <button className="rounded p-1.5 text-primary hover:bg-primary/10">
-                          <Pencil className="h-4 w-4" onClick={() => { setEditing(p); setShowForm(true); }} />
+                        <button
+                          onClick={() => { setEditing(p); setShowForm(true); }}
+                          className="inline-flex items-center gap-1 rounded-md border border-primary/30 px-2 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10"
+                          title="Edit food item"
+                        >
+                          <Pencil className="h-4 w-4" /> Edit
                         </button>
                         <button
                           onClick={() => {
@@ -179,17 +233,47 @@ export function FoodsPage({ title, source = "admin" }: { title: string; source?:
         form={form}
         setForm={setForm}
         editing={editing}
+        categories={categoriesQuery.data ?? []}
+        brands={brandsQuery.data ?? []}
         onSave={async () => {
+          const categoryText = String(form.categoryName || "").toLowerCase();
+          const isPizza = categoryText.includes("pizza");
+          const isCake = categoryText.includes("cake");
+          if (!form.title.trim()) return window.alert("Food title is required.");
+          if (!form.categoryId) return window.alert("Select an Admin-created category.");
+          if (isPizza && (!form.smallSizeExtra || !form.mediumSizeExtra || !form.largeSizeExtra)) return window.alert("Enter Small, Medium and Large pizza prices.");
+          if (isCake && (!form.cake500gmExtra || !form.cake1kgExtra || !form.cake15kgExtra || !form.cake2kgExtra)) return window.alert("Enter all cake prices from 500gm to 2kg.");
+          if (!isPizza && !isCake && !form.price) return window.alert("Enter the food price.");
           const fd = new FormData();
-          Object.entries(form).forEach(([key, value]) => {
-            if (value === undefined || value === null || value === "") return;
-            if (key === "image" && value) fd.append("image", value as File);
-            else if (key !== "image") {
-              fd.append(key, String(value));
-              const snake = key.replace(/[A-Z]/g, (m) => `_${m.toLowerCase()}`);
-              if (snake !== key) fd.append(snake, String(value));
-            }
-          });
+          fd.append("name", form.title.trim());
+          fd.append("title", form.title.trim());
+          fd.append("description", form.description.trim());
+          fd.append("subtitle", form.subtitle.trim());
+          fd.append("categoryId", form.categoryId);
+          fd.append("categoryName", form.categoryName);
+          if(form.brandId) fd.append("brandId",form.brandId);
+          fd.append("foodType", form.isVeg ? "VEG" : "NON_VEG");
+          fd.append("active", String(form.isAvailable));
+          fd.append("featured", String(form.isBestseller));
+          if (form.discountPrice) fd.append("offerPrice", form.discountPrice);
+          if (isPizza) {
+            fd.append("smallSizePrice", form.smallSizeExtra);
+            fd.append("mediumSizePrice", form.mediumSizeExtra);
+            fd.append("largeSizePrice", form.largeSizeExtra);
+            fd.append("basePrice", form.smallSizeExtra);
+          } else if (isCake) {
+            fd.append("cake500gmPrice", form.cake500gmExtra);
+            fd.append("cake1kgPrice", form.cake1kgExtra);
+            fd.append("cake15kgPrice", form.cake15kgExtra);
+            fd.append("cake2kgPrice", form.cake2kgExtra);
+            fd.append("basePrice", form.cake500gmExtra);
+            fd.append("cakeMessageEnabled", String(form.cakeMessageEnabled));
+            fd.append("cakeMessageCharge", form.cakeMessageCharge || "0");
+            fd.append("customWeightEnabled", String(form.customWeightEnabled));
+          } else {
+            fd.append("basePrice", form.price);
+          }
+          if (form.image) fd.append("image", form.image);
           try {
             if (editing) {
               await update.mutateAsync({ id: editing.id, payload: fd, source });
@@ -208,9 +292,12 @@ export function FoodsPage({ title, source = "admin" }: { title: string; source?:
 }
 
 // Simple modal form (kept inline to keep changes minimal)
-function ModalForm({ open, onClose, form, setForm, onSave, editing }: any) {
+function ModalForm({ open, onClose, form, setForm, onSave, editing, categories = [], brands = [] }: any) {
   if (!open) return null;
   const set = (key: string, value: any) => setForm((s:any) => ({ ...s, [key]: value }));
+  const categoryText = String(form.categoryName || "").toLowerCase();
+  const isPizza = categoryText.includes("pizza");
+  const isCake = categoryText.includes("cake");
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
       <div className="w-full max-w-4xl rounded-xl border border-border bg-card p-5 shadow-card">
@@ -218,28 +305,33 @@ function ModalForm({ open, onClose, form, setForm, onSave, editing }: any) {
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           <Field label="Title" value={form.title} onChange={(v:any)=>set("title", v)} />
           <Field label="Subtitle" value={form.subtitle} onChange={(v:any)=>set("subtitle", v)} />
-          <Field label="Category" value={form.categoryName} onChange={(v:any)=>set("categoryName", v)} />
-          <Field label="Food Type" value={form.foodType} onChange={(v:any)=>set("foodType", v)} />
-          <Field label="Price" value={form.price} onChange={(v:any)=>set("price", v)} />
-          <Field label="Discount Price" value={form.discountPrice} onChange={(v:any)=>set("discountPrice", v)} />
-          <Field label="Stock Quantity" value={form.stockQuantity} onChange={(v:any)=>set("stockQuantity", v)} />
-          <Field label="Small Size Extra" value={form.smallSizeExtra} onChange={(v:any)=>set("smallSizeExtra", v)} />
-          <Field label="Medium Size Extra" value={form.mediumSizeExtra} onChange={(v:any)=>set("mediumSizeExtra", v)} />
-          <Field label="Large Size Extra" value={form.largeSizeExtra} onChange={(v:any)=>set("largeSizeExtra", v)} />
-          <Field label="Cake 500gm Extra" value={form.cake500gmExtra} onChange={(v:any)=>set("cake500gmExtra", v)} />
-          <Field label="Cake 1kg Extra" value={form.cake1kgExtra} onChange={(v:any)=>set("cake1kgExtra", v)} />
-          <Field label="Cake 1.5kg Extra" value={form.cake15kgExtra} onChange={(v:any)=>set("cake15kgExtra", v)} />
-          <Field label="Cake 2kg Extra" value={form.cake2kgExtra} onChange={(v:any)=>set("cake2kgExtra", v)} />
-          <Field label="Cake Message Charge" value={form.cakeMessageCharge} onChange={(v:any)=>set("cakeMessageCharge", v)} />
+          <label className="block text-sm font-medium">Admin Category<select value={form.categoryId} onChange={(e)=>{ const c=categories.find((x:any)=>String(x.id)===e.target.value); setForm((v:any)=>({...v,categoryId:e.target.value,categoryName:c?.name??"",price:"",smallSizeExtra:"",mediumSizeExtra:"",largeSizeExtra:"",cake500gmExtra:"",cake1kgExtra:"",cake15kgExtra:"",cake2kgExtra:""})); }} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2"><option value="">Select category</option>{categories.map((c:any) => <option key={c.id} value={c.id}>{c.name}</option>)}</select><span className="mt-1 block text-xs text-muted-foreground">Only categories created by Admin are available.</span></label>
+          <label className="block text-sm font-medium">Brand (optional)<select value={form.brandId} onChange={(e)=>{const b=brands.find((x:any)=>String(x.id)===e.target.value);setForm((v:any)=>({...v,brandId:e.target.value,brandName:b?.name??""}));}} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2"><option value="">No brand</option>{brands.map((b:any)=><option key={b.id} value={b.id}>{b.name}</option>)}</select><span className="mt-1 block text-xs text-muted-foreground">Brand products appear under this brand in the customer app.</span></label>
+          <label className="block text-sm font-medium">Food Type<select value={form.isVeg ? "VEG" : "NON_VEG"} onChange={(e)=>set("isVeg",e.target.value==="VEG")} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2"><option value="VEG">Veg</option><option value="NON_VEG">Non-Veg</option></select></label>
+          {!isPizza && !isCake && <Field label="Price (₹)" type="number" value={form.price} onChange={(v:any)=>set("price", v)} />}
+          <Field label="Offer Price (₹, optional)" type="number" value={form.discountPrice} onChange={(v:any)=>set("discountPrice", v)} />
+          {isPizza && <>
+            <Field label="Small Price (₹) — Default" type="number" value={form.smallSizeExtra} onChange={(v:any)=>set("smallSizeExtra", v)} />
+            <Field label="Medium Price (₹)" type="number" value={form.mediumSizeExtra} onChange={(v:any)=>set("mediumSizeExtra", v)} />
+            <Field label="Large Price (₹)" type="number" value={form.largeSizeExtra} onChange={(v:any)=>set("largeSizeExtra", v)} />
+          </>}
+          {isCake && <>
+            <Field label="500gm Price (₹) — Default" type="number" value={form.cake500gmExtra} onChange={(v:any)=>set("cake500gmExtra", v)} />
+            <Field label="1kg Price (₹)" type="number" value={form.cake1kgExtra} onChange={(v:any)=>set("cake1kgExtra", v)} />
+            <Field label="1.5kg Price (₹)" type="number" value={form.cake15kgExtra} onChange={(v:any)=>set("cake15kgExtra", v)} />
+            <Field label="2kg Price (₹)" type="number" value={form.cake2kgExtra} onChange={(v:any)=>set("cake2kgExtra", v)} />
+            <Field label="Cake Message Charge (₹)" type="number" value={form.cakeMessageCharge} onChange={(v:any)=>set("cakeMessageCharge", v)} />
+          </>}
           <label className="block text-sm font-medium">Image<input type="file" accept="image/*" onChange={(e:any) => set("image", e.target.files?.[0] ?? null)} className="mt-1 w-full rounded-md border border-input px-3 py-2" /></label>
         </div>
+        {(isPizza || isCake) && <div className="mt-3 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm"><strong>{isPizza ? "Pizza size pricing" : "Cake weight pricing"}</strong><div className="mt-1 text-muted-foreground">{isPizza ? "Customer sees Small, Medium and Large. Small is selected by default." : "Customer sees 500gm, 1kg, 1.5kg and 2kg. 500gm is selected by default."}</div></div>}
         <label className="mt-3 block text-sm font-medium">Description<textarea value={form.description} onChange={(e)=>set("description", e.target.value)} className="mt-1 min-h-24 w-full rounded-md border border-input px-3 py-2" /></label>
         <div className="mt-4 grid gap-2 md:grid-cols-3">
           <Toggle label="Veg" value={form.isVeg} onChange={(v:any)=>set("isVeg", v)} />
           <Toggle label="Available" value={form.isAvailable} onChange={(v:any)=>set("isAvailable", v)} />
           <Toggle label="Bestseller" value={form.isBestseller} onChange={(v:any)=>set("isBestseller", v)} />
-          <Toggle label="Cake Message" value={form.cakeMessageEnabled} onChange={(v:any)=>set("cakeMessageEnabled", v)} />
-          <Toggle label="Custom Weight" value={form.customWeightEnabled} onChange={(v:any)=>set("customWeightEnabled", v)} />
+          {isCake && <Toggle label="Cake Message" value={form.cakeMessageEnabled} onChange={(v:any)=>set("cakeMessageEnabled", v)} />}
+          {isCake && <Toggle label="Custom Weight" value={form.customWeightEnabled} onChange={(v:any)=>set("customWeightEnabled", v)} />}
         </div>
         <div className="mt-5 flex justify-end gap-2">
           <button onClick={onClose} className="rounded-md border border-border px-4 py-2 text-sm hover:bg-accent">Cancel</button>
@@ -249,5 +341,5 @@ function ModalForm({ open, onClose, form, setForm, onSave, editing }: any) {
     </div>
   );
 }
-function Field({ label, value, onChange }: any) { return <label className="block text-sm font-medium">{label}<input value={value ?? ""} onChange={(e)=>onChange(e.target.value)} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2" /></label>; }
+function Field({ label, value, onChange, type = "text" }: any) { return <label className="block text-sm font-medium">{label}<input type={type} min={type === "number" ? 0 : undefined} step={type === "number" ? "0.01" : undefined} value={value ?? ""} onChange={(e)=>onChange(e.target.value)} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2" /></label>; }
 function Toggle({ label, value, onChange }: any) { return <label className="flex items-center justify-between rounded-lg border border-border p-3 text-sm font-medium"><span>{label}</span><input type="checkbox" checked={!!value} onChange={(e)=>onChange(e.target.checked)} /></label>; }

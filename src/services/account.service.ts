@@ -1,13 +1,52 @@
 import { request } from "@/api/client";
-import { endpoints } from "@/api/endpoints";
+
+type Config = Omit<Parameters<typeof request<any>>[0], "url">;
+
+async function requestFallback<T>(paths: string[], config: Config): Promise<T> {
+  let lastError: unknown;
+  for (const url of paths) {
+    try {
+      return await request<T>({ ...config, url });
+    } catch (error: any) {
+      lastError = error;
+      const status = Number(error?.status ?? 0);
+      if ([400, 401, 403, 409, 422, 429].includes(status)) throw error;
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error("The backend does not support this account operation.");
+}
+
+const PROFILE_PATHS = ["/admin/account/profile", "/admin/profile", "/admin/me"];
+const EMAIL_PATHS = ["/admin/account/email", "/admin/profile/email", "/admin/change-email"];
+const PASSWORD_PATHS = ["/admin/account/password", "/admin/profile/password", "/admin/change-password"];
 
 export const accountService = {
-  profile: () => request<any>({ url: endpoints.admin.accountProfile, method: "GET" }),
-  updateProfile: (data: any) => request<any>({ url: endpoints.admin.accountProfile, method: "PUT", data }),
-  updateGstin: (data: any) => request<any>({ url: endpoints.admin.gstinUpdate, method: "PATCH", data }),
-  sendPasswordOtp: () => request<any>({ url: endpoints.admin.updatePasswordOtp, method: "POST" }),
-  updatePassword: (data: any) => request<any>({ url: endpoints.admin.updatePassword, method: "PUT", data }),
-  sendEmailOtp: () => request<any>({ url: endpoints.admin.updateEmailOtp, method: "POST" }),
-  updateEmail: (data: any) => request<any>({ url: endpoints.admin.updateEmail, method: "PUT", data }),
-  updatePhone: (data: any) => request<any>({ url: endpoints.admin.updatePhone, method: "PUT", data }),
+  profile: () => requestFallback<any>(PROFILE_PATHS, { method: "GET" }),
+  updateProfile: (data: any) => requestFallback<any>(PROFILE_PATHS, { method: "PUT", data }),
+  updateGstin: (data: any) => requestFallback<any>(["/admin/account/profile/gstin", "/admin/profile/gstin"], { method: "PATCH", data }),
+  sendPasswordOtp: () => requestFallback<any>(["/admin/account/password/otp", "/admin/profile/password/otp"], { method: "POST" }),
+  updatePassword: (data: any) => requestFallback<any>(PASSWORD_PATHS, {
+    method: "PUT",
+    data: {
+      ...data,
+      current_password: data.currentPassword,
+      oldPassword: data.currentPassword,
+      password: data.newPassword,
+      new_password: data.newPassword,
+      confirm_password: data.confirmPassword,
+    },
+  }),
+  sendEmailOtp: () => requestFallback<any>(["/admin/account/email/otp", "/admin/profile/email/otp"], { method: "POST" }),
+  updateEmail: (data: any) => requestFallback<any>(EMAIL_PATHS, {
+    method: "PUT",
+    data: {
+      ...data,
+      email: data.newEmail ?? data.email,
+      newEmail: data.newEmail ?? data.email,
+      new_email: data.newEmail ?? data.email,
+      current_password: data.currentPassword,
+      password: data.currentPassword,
+    },
+  }),
+  updatePhone: (data: any) => requestFallback<any>(["/admin/account/phone", "/admin/profile/phone"], { method: "PUT", data }),
 };
