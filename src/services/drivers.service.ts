@@ -83,6 +83,10 @@ export const driversService = {
       method: "POST",
       data: body,
     }),
+  payout: (driverId: number | string, body: { amount?: number; upiId?: string; paymentReference?: string; periodStart?: string; periodEnd?: string; note?: string }) =>
+    request<AdminDriverCashResponse>({ url: endpoints.admin.driverPayout(driverId), method: 'POST', data: body }),
+  requestUpi: (driverId: number | string, message?: string) =>
+    request<{ sent: boolean }>({ url: endpoints.admin.driverRequestUpi(driverId), method: 'POST', data: { message } }),
   transactions: (driverId: number | string, page = 1, perPage = 20) =>
     request<PageResponse<unknown>>({
       url: endpoints.admin.driverCashTx(driverId),

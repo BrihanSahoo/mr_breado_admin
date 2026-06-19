@@ -114,6 +114,8 @@ export const endpoints = {
     driversCash: "/admin/drivers/cash",
     verifyDriverCash: (driverId: number | string) => `/admin/drivers/${driverId}/cash-deposit/verify`,
     driverCashTx: (driverId: number | string) => `/admin/drivers/${driverId}/cash-transactions`,
+    driverPayout: (driverId: number | string) => `/admin/drivers/${driverId}/payout`,
+    driverRequestUpi: (driverId: number | string) => `/admin/drivers/${driverId}/request-upi`,
 
     products: "/admin/products",
     foodRequests: "/admin/food-requests",
