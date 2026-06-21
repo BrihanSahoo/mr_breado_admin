@@ -12,10 +12,10 @@ export const Route = createFileRoute("/cuisine")({
   head: () => ({ meta: [{ title: "Cuisine | Go4Food Admin" }] }),
   component: () => {
     const { data, isLoading, error } = useCuisines();
-    type Row = { id: number; name: string; status?: string; img?: string };
+    type Row = { id: string; name: string; status?: string; img?: string; imageUrl?: string };
     const items = data ?? [];
     const cols: Column<Row>[] = [
-      { key: "img", header: "Image", render: r => <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-xl">{r.img}</div> },
+      { key: "img", header: "Image", render: r => {r.img ? <img src={r.img} alt={r.name} className="h-10 w-10 rounded-lg object-cover" /> : <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent">🍽️</div>} },
       { key: "name", header: "Cuisine Name", render: r => <span className="font-medium">{r.name}</span> },
       { key: "status", header: "Status", render: r => <StatusBadge status={r.status} /> },
       { key: "actions", header: "Action", render: (r) => (
@@ -36,13 +36,14 @@ export const Route = createFileRoute("/cuisine")({
       const [isOpen, setIsOpen] = useState(false);
       const [editing, setEditing] = useState<any | null>(null);
       const [name, setName] = useState("");
-      const [img, setImg] = useState("🍽️");
+      const [img, setImg] = useState("");
+      const [file, setFile] = useState<File | null>(null);
       const [status, setStatus] = useState("Active");
 
       return (<>
         <PageHeader title="Cuisine" icon={<Soup className="h-5 w-5"/>}
           breadcrumbs={[{label:"Dashboard",to:"/"},{label:"Cuisine"}]}
-          actions={<button onClick={() => { setEditing(null); setName(""); setImg("🍽️"); setStatus("Active"); setIsOpen(true); }} className="inline-flex items-center gap-1.5 rounded-md gradient-primary px-3 py-1.5 text-sm font-medium text-primary-foreground shadow-glow"><Plus className="h-4 w-4"/> Add Cuisine</button>} />
+          actions={<button onClick={() => { setEditing(null); setName(""); setImg(""); setStatus("Active"); setIsOpen(true); }} className="inline-flex items-center gap-1.5 rounded-md gradient-primary px-3 py-1.5 text-sm font-medium text-primary-foreground shadow-glow"><Plus className="h-4 w-4"/> Add Cuisine</button>} />
         <DataTable data={items} columns={cols} searchableKeys={["name"]} title="All Cuisines" loading={isLoading} />
 
         {isOpen ? (
@@ -51,15 +52,15 @@ export const Route = createFileRoute("/cuisine")({
               <h3 className="mb-4 text-lg font-semibold">{editing ? "Edit Cuisine" : "Add Cuisine"}</h3>
               <div className="flex flex-col gap-3">
                 <label className="text-sm">Name<input value={name} onChange={e => setName(e.target.value)} className="mt-1 w-full rounded border px-2 py-1" /></label>
-                <label className="text-sm">Emoji/Icon<input value={img} onChange={e => setImg(e.target.value)} className="mt-1 w-full rounded border px-2 py-1" /></label>
+                <label className="text-sm">Cuisine image<input type="file" accept="image/*" onChange={e=>setFile(e.target.files?.[0]??null)} className="mt-1 w-full rounded border px-2 py-2" /></label>{img && <img src={img} alt="Current cuisine" className="h-20 w-full rounded-lg object-cover"/>}
                 <label className="text-sm">Status<select value={status} onChange={e => setStatus(e.target.value)} className="mt-1 w-full rounded border px-2 py-1"><option>Active</option><option>Inactive</option></select></label>
                 <div className="mt-4 flex justify-end gap-2">
                   <button onClick={() => setIsOpen(false)} className="rounded-md px-3 py-1">Cancel</button>
                   <button onClick={() => {
-                    const payload = { name, img, status };
-                    if (editing) update.mutate({ id: editing.id, payload });
-                    else create.mutate({ id: Date.now(), name, img, status });
-                    setIsOpen(false);
+                    const payload = new FormData(); payload.append("name",name.trim()); payload.append("status",status); payload.append("active",String(status==="Active")); if(file) payload.append("image",file);
+                    if (!name.trim()) return;
+                    if (editing) update.mutate({ id: editing.id, payload }); else create.mutate(payload);
+                    setIsOpen(false); setFile(null);
                   }} className="rounded-md bg-primary px-3 py-1 text-white">Save</button>
                 </div>
               </div>

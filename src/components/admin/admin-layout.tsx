@@ -50,7 +50,7 @@ const NAV: { section?: string; items: Item[] }[] = [
   ]},
   { section: "OFFER MANAGEMENT", items: [
     { label: "Coupons", to: "/coupons", icon: Tag },
-    { label: "Offers", to: "/offers", icon: Gift },
+    { label: "Offers & Banners", to: "/offers", icon: Gift },
   ]},
   { section: "SUPPORT MANAGEMENT", items: [
     { label: "Support Dashboard", to: "/support", icon: LifeBuoy },
@@ -68,7 +68,6 @@ const NAV: { section?: string; items: Item[] }[] = [
     { label: "Outlet Business Control", to: "/business-outlets", icon: Building2 },
     { label: "Customer Messages", to: "/customer-messages", icon: MessageSquare },
     { label: "Admin Profile", to: "/admin-profile", icon: UserCircle },
-    { label: "Banner Management", to: "/banners", icon: ImageIcon },
     { label: "Bite Stories", to: "/stories", icon: Sparkles },
     { label: "Online Transactions", to: "/online-transactions", icon: CreditCard },
   ]},
@@ -186,7 +185,7 @@ function ThemeSwitcher() {
   );
 }
 
-function LogoutButton() {
+function LogoutButton({ compact = false }: { compact?: boolean }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
   return (
@@ -197,9 +196,10 @@ function LogoutButton() {
         qc.clear();
         navigate({ to: "/login", replace: true });
       }}
-      className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-destructive hover:bg-sidebar-accent"
+      className={cn("flex items-center gap-3 rounded-md px-3 py-2 text-sm font-semibold text-destructive hover:bg-sidebar-accent", compact ? "w-auto border border-destructive/20" : "w-full")}
+      title="Log out of admin dashboard"
     >
-      <LogOut className="h-4 w-4" /> Log out
+      <LogOut className="h-4 w-4" /> {compact ? "Logout" : "Log out"}
     </button>
   );
 }
@@ -240,6 +240,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
               <div className="font-semibold">Mr. Breado Admin</div>
             </div>
           </div>
+          <div className="hidden md:block"><LogoutButton compact /></div>
         </header>
         <main className="min-w-0 flex-1 overflow-y-auto">
           <div className="mx-auto w-full max-w-[1680px] p-4 md:p-7">

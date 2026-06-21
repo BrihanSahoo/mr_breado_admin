@@ -1,65 +1,9 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation,useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { api } from "@/api/client";
 import { cuisineKeys } from "@/hooks/queries/use-cuisines";
-
-type Cuisine = { id?: number | string; name: string; img?: string; status?: string };
-
-export function useCreateCuisine() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (payload: Cuisine) => payload,
-    onSuccess: (newItem: Cuisine) => {
-      toast.success("Cuisine created");
-      qc.setQueriesData(cuisineKeys.list({ page: 1, perPage: 100 }), (old: any) => {
-        if (!old) return old;
-        return [newItem, ...(old ?? [])];
-      });
-    },
-    onError: (e: any) => toast.error(e?.message ?? "Failed to create cuisine"),
-  });
-}
-
-export function useUpdateCuisine() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (v: { id: number | string; payload: Partial<Cuisine> }) => v,
-    onSuccess: (v) => {
-      toast.success("Cuisine updated");
-      qc.setQueriesData(cuisineKeys.list({ page: 1, perPage: 100 }), (old: any) => {
-        if (!old) return old;
-        return (old ?? []).map((it: any) => (it.id === v.id ? { ...it, ...v.payload } : it));
-      });
-    },
-    onError: (e: any) => toast.error(e?.message ?? "Failed to update cuisine"),
-  });
-}
-
-export function useDeleteCuisine() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number | string) => id,
-    onSuccess: (id: number | string) => {
-      toast.success("Cuisine deleted");
-      qc.setQueriesData(cuisineKeys.list({ page: 1, perPage: 100 }), (old: any) => {
-        if (!old) return old;
-        return (old ?? []).filter((it: any) => it.id !== id);
-      });
-    },
-    onError: (e: any) => toast.error(e?.message ?? "Failed to delete cuisine"),
-  });
-}
-
-export function useToggleCuisineStatus() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (v: { id: number | string; status: string }) => v,
-    onSuccess: (v) => {
-      toast.success("Status updated");
-      qc.setQueriesData(cuisineKeys.list({ page: 1, perPage: 100 }), (old: any) => {
-        if (!old) return old;
-        return (old ?? []).map((it: any) => (it.id === v.id ? { ...it, status: v.status } : it));
-      });
-    },
-    onError: (e: any) => toast.error(e?.message ?? "Failed to update status"),
-  });
-}
+const refresh=(qc:any)=>qc.invalidateQueries({queryKey:cuisineKeys.all});
+export function useCreateCuisine(){const qc=useQueryClient();return useMutation({mutationFn:(payload:FormData)=>api.post("/admin/cuisines",payload),onSuccess:()=>{toast.success("Cuisine created");refresh(qc)},onError:(e:any)=>toast.error(e?.response?.data?.message??e?.message??"Failed to create cuisine")});}
+export function useUpdateCuisine(){const qc=useQueryClient();return useMutation({mutationFn:(v:{id:string|number,payload:FormData})=>api.put(`/admin/cuisines/${v.id}`,v.payload),onSuccess:()=>{toast.success("Cuisine updated");refresh(qc)},onError:(e:any)=>toast.error(e?.response?.data?.message??e?.message??"Failed to update cuisine")});}
+export function useDeleteCuisine(){const qc=useQueryClient();return useMutation({mutationFn:(id:string|number)=>api.delete(`/admin/cuisines/${id}`),onSuccess:()=>{toast.success("Cuisine deleted");refresh(qc)},onError:(e:any)=>toast.error(e?.response?.data?.message??e?.message??"Failed to delete cuisine")});}
+export function useToggleCuisineStatus(){const qc=useQueryClient();return useMutation({mutationFn:(v:{id:string|number,status:string})=>api.patch(`/admin/cuisines/${v.id}/status`,{status:v.status,active:v.status==="Active"}),onSuccess:()=>{toast.success("Status updated");refresh(qc)},onError:(e:any)=>toast.error(e?.response?.data?.message??e?.message??"Failed to update status")});}

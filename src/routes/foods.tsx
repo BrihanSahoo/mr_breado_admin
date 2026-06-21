@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/admin/page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { Utensils, Plus, Pencil, Trash2, Star, Loader2, ChevronLeft, ChevronRight, Download, FileSpreadsheet } from "lucide-react";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { useProducts } from "@/hooks/queries/use-products";
@@ -39,14 +40,17 @@ export function FoodsPage({ title, source = "admin" }: { title: string; source?:
       .filter((x:any) => x.id && x.name);
   }, staleTime: 30000 });
   const [editing, setEditing] = useState<any | null>(null);
+  const cuisinesQuery = useQuery({ queryKey:["admin-cuisines-for-form"], queryFn: async()=>{ const res=await api.get("/admin/cuisines"); const d=res.data?.data??res.data; return (Array.isArray(d)?d:(d?.items??[])).filter((x:any)=>x.active!==false&&String(x.status??'Active')!=='Inactive').map((x:any)=>({id:String(x.id??x._id),name:x.name??x.title,slug:x.slug})); }});
   const brandsQuery = useQuery({ queryKey:["admin-brands-for-form"], queryFn: async()=>{ const res=await api.get("/admin/brands"); const d=res.data?.data??res.data; return (Array.isArray(d)?d:(d?.items??[])).filter((x:any)=>x.active!==false).map((x:any)=>({id:String(x.id??x._id),name:x.name,slug:x.slug})); }});
-  const blankForm = { brandId: "", brandName: "", title: "", subtitle: "", description: "", price: "", discountPrice: "", categoryId: "", categoryName: "", foodType: "VEG", stockQuantity: "", isVeg: true, isAvailable: true, isBestseller: false, smallSizeExtra: "", mediumSizeExtra: "", largeSizeExtra: "", cake500gmExtra: "", cake1kgExtra: "", cake15kgExtra: "", cake2kgExtra: "", cakeMessageEnabled: false, cakeMessageCharge: "", customWeightEnabled: false, image: null as File | null };
+  const blankForm = { cuisineId: "", cuisineName: "", brandId: "", brandName: "", title: "", subtitle: "", description: "", price: "", discountPrice: "", categoryId: "", categoryName: "", foodType: "VEG", stockQuantity: "", isVeg: true, isAvailable: true, isBestseller: false, smallSizeExtra: "", mediumSizeExtra: "", largeSizeExtra: "", cake500gmExtra: "", cake1kgExtra: "", cake15kgExtra: "", cake2kgExtra: "", cakeMessageEnabled: false, cakeMessageCharge: "", customWeightEnabled: false, image: null as File | null };
   const [form, setForm] = useState(blankForm);
 
   const applyProductToForm = (product: any) => {
     const pick = (...vals: any[]) => vals.find((v) => v !== undefined && v !== null && String(v).trim() !== "") ?? "";
     setForm({
       ...blankForm,
+      cuisineId: String(pick(product.cuisineId?._id,product.cuisineId,product.cuisine_id,product.cuisine?.id,product.cuisine?._id)),
+      cuisineName: pick(product.cuisineName,product.cuisine_name,product.cuisine?.name),
       brandId: String(pick(product.brandId?._id,product.brandId,product.brand_id,product.brand?.id,product.brand?._id)),
       brandName: pick(product.brandName,product.brand_name,product.brand?.name),
       title: pick(product.title, product.name, product.productName, product.product_name, product.foodName, product.food_name),
@@ -235,15 +239,20 @@ export function FoodsPage({ title, source = "admin" }: { title: string; source?:
         editing={editing}
         categories={categoriesQuery.data ?? []}
         brands={brandsQuery.data ?? []}
+        cuisines={cuisinesQuery.data ?? []}
         onSave={async () => {
           const categoryText = String(form.categoryName || "").toLowerCase();
           const isPizza = categoryText.includes("pizza");
           const isCake = categoryText.includes("cake");
-          if (!form.title.trim()) return window.alert("Food title is required.");
-          if (!form.categoryId) return window.alert("Select an Admin-created category.");
-          if (isPizza && (!form.smallSizeExtra || !form.mediumSizeExtra || !form.largeSizeExtra)) return window.alert("Enter Small, Medium and Large pizza prices.");
-          if (isCake && (!form.cake500gmExtra || !form.cake1kgExtra || !form.cake15kgExtra || !form.cake2kgExtra)) return window.alert("Enter all cake prices from 500gm to 2kg.");
-          if (!isPizza && !isCake && !form.price) return window.alert("Enter the food price.");
+          if (!form.title.trim()) { toast.error("Food title is required."); return; }
+          if (!form.categoryId) { toast.error("Select an Admin-created category."); return; }
+          if (!form.cuisineId) { toast.error("Select a cuisine."); return; }
+          if (isPizza && (!form.smallSizeExtra || !form.mediumSizeExtra || !form.largeSizeExtra)) { toast.error("Enter Small, Medium and Large pizza prices."); return; }
+          if (isCake && (!form.cake500gmExtra || !form.cake1kgExtra || !form.cake15kgExtra || !form.cake2kgExtra)) { toast.error("Enter all cake prices from 500gm to 2kg."); return; }
+          if (!isPizza && !isCake && !form.price) { toast.error("Enter the food price."); return; }
+          if (!editing && !form.image) { toast.error("Select a food image from your device."); return; }
+          const positive=(value:any)=>Number(value)>0;
+          if (form.discountPrice && (!positive(form.discountPrice) || Number(form.discountPrice)>=Number(isPizza?form.smallSizeExtra:isCake?form.cake500gmExtra:form.price))) { toast.error("Offer price must be positive and lower than the base price."); return; }
           const fd = new FormData();
           fd.append("name", form.title.trim());
           fd.append("title", form.title.trim());
@@ -251,6 +260,8 @@ export function FoodsPage({ title, source = "admin" }: { title: string; source?:
           fd.append("subtitle", form.subtitle.trim());
           fd.append("categoryId", form.categoryId);
           fd.append("categoryName", form.categoryName);
+          fd.append("cuisineId", form.cuisineId);
+          fd.append("cuisineName", form.cuisineName);
           if(form.brandId) fd.append("brandId",form.brandId);
           fd.append("foodType", form.isVeg ? "VEG" : "NON_VEG");
           fd.append("active", String(form.isAvailable));
@@ -283,7 +294,7 @@ export function FoodsPage({ title, source = "admin" }: { title: string; source?:
             setShowForm(false);
             setEditing(null);
           } catch (e) {
-            console.error(e);
+            console.error(e); toast.error((e as any)?.response?.data?.message || (e as any)?.message || "Food could not be saved");
           }
         }}
       />
@@ -292,20 +303,21 @@ export function FoodsPage({ title, source = "admin" }: { title: string; source?:
 }
 
 // Simple modal form (kept inline to keep changes minimal)
-function ModalForm({ open, onClose, form, setForm, onSave, editing, categories = [], brands = [] }: any) {
+function ModalForm({ open, onClose, form, setForm, onSave, editing, categories = [], brands = [], cuisines = [] }: any) {
   if (!open) return null;
   const set = (key: string, value: any) => setForm((s:any) => ({ ...s, [key]: value }));
   const categoryText = String(form.categoryName || "").toLowerCase();
   const isPizza = categoryText.includes("pizza");
   const isCake = categoryText.includes("cake");
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
-      <div className="w-full max-w-4xl rounded-xl border border-border bg-card p-5 shadow-card">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/55 p-3 pt-[max(12px,env(safe-area-inset-top))] sm:items-center sm:p-4">
+      <div className="my-auto max-h-[calc(100dvh-24px)] w-full max-w-4xl overflow-y-auto rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
         <h3 className="mb-4 text-lg font-semibold">{editing ? "Edit Food" : "Add Item"}</h3>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           <Field label="Title" value={form.title} onChange={(v:any)=>set("title", v)} />
           <Field label="Subtitle" value={form.subtitle} onChange={(v:any)=>set("subtitle", v)} />
           <label className="block text-sm font-medium">Admin Category<select value={form.categoryId} onChange={(e)=>{ const c=categories.find((x:any)=>String(x.id)===e.target.value); setForm((v:any)=>({...v,categoryId:e.target.value,categoryName:c?.name??"",price:"",smallSizeExtra:"",mediumSizeExtra:"",largeSizeExtra:"",cake500gmExtra:"",cake1kgExtra:"",cake15kgExtra:"",cake2kgExtra:""})); }} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2"><option value="">Select category</option>{categories.map((c:any) => <option key={c.id} value={c.id}>{c.name}</option>)}</select><span className="mt-1 block text-xs text-muted-foreground">Only categories created by Admin are available.</span></label>
+          <label className="block text-sm font-medium">Cuisine<select value={form.cuisineId} onChange={(e)=>{const c=cuisines.find((x:any)=>String(x.id)===e.target.value);setForm((v:any)=>({...v,cuisineId:e.target.value,cuisineName:c?.name??""}));}} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2"><option value="">Select cuisine</option>{cuisines.map((c:any)=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
           <label className="block text-sm font-medium">Brand (optional)<select value={form.brandId} onChange={(e)=>{const b=brands.find((x:any)=>String(x.id)===e.target.value);setForm((v:any)=>({...v,brandId:e.target.value,brandName:b?.name??""}));}} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2"><option value="">No brand</option>{brands.map((b:any)=><option key={b.id} value={b.id}>{b.name}</option>)}</select><span className="mt-1 block text-xs text-muted-foreground">Brand products appear under this brand in the customer app.</span></label>
           <label className="block text-sm font-medium">Food Type<select value={form.isVeg ? "VEG" : "NON_VEG"} onChange={(e)=>set("isVeg",e.target.value==="VEG")} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2"><option value="VEG">Veg</option><option value="NON_VEG">Non-Veg</option></select></label>
           {!isPizza && !isCake && <Field label="Price (₹)" type="number" value={form.price} onChange={(v:any)=>set("price", v)} />}

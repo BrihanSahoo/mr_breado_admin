@@ -262,7 +262,7 @@ export interface AdminDriverCashResponse {
   latestLocation?: { latitude?: number; longitude?: number; recordedAt?: string } | null;
   payouts?: Array<{ id: string; amount: number; status: string; periodStart?: string; periodEnd?: string; upiId?: string; paymentReference?: string; paidAt?: string; note?: string }>;
   orders?: Array<{ id?: number; orderNumber?: string; status?: string; total?: number; paymentMethod?: string; paymentStatus?: string; distanceKm?: number; outletName?: string; customerName?: string; deliveredAt?: string; createdAt?: string }>;
-  verificationRequest?: { id?: string; status?: string; documents?: Array<{ url?: string; alt?: string }>; note?: string; createdAt?: string } | null;
+  verificationRequest?: { id?: string; status?: string; documents?: Array<{ url?: string; downloadUrl?: string; publicId?: string; alt?: string }>; note?: string; createdAt?: string } | null;
   rating?: number;
 }
 export interface AdminDriverCashDepositRequest {
