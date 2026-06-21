@@ -11,7 +11,7 @@ import { restaurantsService } from "@/services/restaurants.service";
 import type { AdminRestaurantResponse } from "@/types";
 
 export const Route = createFileRoute("/restaurants")({
-  head: () => ({ meta: [{ title: "Restaurants | Go4Food Admin" }] }),
+  head: () => ({ meta: [{ title: "Restaurants | Mr. Breado Admin" }] }),
   component: RestaurantsPage,
 });
 

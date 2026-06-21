@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/admin/page-header";
 import { CreditCard, Check } from "lucide-react";
 
 export const Route = createFileRoute("/subscriptions")({
-  head: () => ({ meta: [{ title: "Subscriptions | Go4Food Admin" }] }),
+  head: () => ({ meta: [{ title: "Subscriptions | Mr. Breado Admin" }] }),
   component: () => {
     const plans = [
       { name:"Basic", price:0, features:["Up to 50 orders/mo","Email support","1 restaurant"], color:"border-border" },

@@ -12,7 +12,7 @@ import { usersService } from "@/services/users.service";
 import type { AdminUserResponse } from "@/types";
 
 export const Route = createFileRoute("/customers")({
-  head: () => ({ meta: [{ title: "Customers | Go4Food Admin" }] }),
+  head: () => ({ meta: [{ title: "Customers | Mr. Breado Admin" }] }),
   component: CustomersPage,
 });
 

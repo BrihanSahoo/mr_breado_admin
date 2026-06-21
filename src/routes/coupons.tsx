@@ -11,7 +11,7 @@ import {
 import type { AdminCouponRequest, Coupon } from "@/types";
 
 export const Route = createFileRoute("/coupons")({
-  head: () => ({ meta: [{ title: "Coupons | Go4Food Admin" }] }),
+  head: () => ({ meta: [{ title: "Coupons | Mr. Breado Admin" }] }),
   component: CouponsPage,
 });
 

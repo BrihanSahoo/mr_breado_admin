@@ -6,7 +6,7 @@ import { usersService } from "@/services/users.service";
 import { useQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/roles")({
-  head: () => ({ meta: [{ title: "Roles | Go4Food Admin" }] }),
+  head: () => ({ meta: [{ title: "Roles | Mr. Breado Admin" }] }),
   component: RolesPage,
 });
 

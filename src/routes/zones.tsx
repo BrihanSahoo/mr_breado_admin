@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/admin/page-header";
 import { MapPin, Plus, Pencil, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/zones")({
-  head: () => ({ meta: [{ title: "Zones | Go4Food Admin" }] }),
+  head: () => ({ meta: [{ title: "Zones | Mr. Breado Admin" }] }),
   component: () => {
     const zones = [
       { name:"Downtown", charge:2.50, restaurants:24, status:"Active" },

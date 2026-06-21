@@ -4,7 +4,7 @@ import { Mail, Lock, User, Eye, EyeOff, ChefHat, ArrowRight, Sparkles } from "lu
 import authImg from "@/assets/auth-register.jpg";
 
 export const Route = createFileRoute("/register")({
-  head: () => ({ meta: [{ title: "Create account | Go4Food Admin" }] }),
+  head: () => ({ meta: [{ title: "Create account | Mr. Breado Admin" }] }),
   component: RegisterPage,
 });
 
@@ -32,7 +32,7 @@ function RegisterPage() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg gradient-primary text-primary-foreground">
               <ChefHat className="h-4 w-4" />
             </div>
-            <span className="font-bold">Go4Food Admin</span>
+            <span className="font-bold">Mr. Breado Admin</span>
           </div>
 
           <h1 className="text-2xl font-bold tracking-tight">Create your account</h1>
@@ -138,7 +138,7 @@ function RegisterPage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(255,115,0,0.3),transparent_60%)]" />
         <div className="relative z-10 flex h-full flex-col justify-between p-10">
           <div className="flex items-center justify-end gap-2 text-foreground">
-            <span className="text-lg font-bold tracking-tight">Go4Food Admin</span>
+            <span className="text-lg font-bold tracking-tight">Mr. Breado Admin</span>
             <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary text-primary-foreground shadow-glow">
               <ChefHat className="h-5 w-5" />
             </div>

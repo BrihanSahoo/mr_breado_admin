@@ -9,7 +9,7 @@ import {
 import type { OfferRequest, OfferResponse } from "@/types";
 
 export const Route = createFileRoute("/offers")({
-  head: () => ({ meta: [{ title: "Offers | Go4Food Admin" }] }),
+  head: () => ({ meta: [{ title: "Offers | Mr. Breado Admin" }] }),
   component: OffersPage,
 });
 

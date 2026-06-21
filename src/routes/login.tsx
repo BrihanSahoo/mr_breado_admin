@@ -7,7 +7,7 @@ import { api } from "@/api/client";
 import { useLogin } from "@/hooks/mutations/use-login";
 
 export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Sign in | Go4Food Admin" }] }),
+  head: () => ({ meta: [{ title: "Sign in | Mr. Breado Admin" }] }),
   component: LoginPage,
 });
 

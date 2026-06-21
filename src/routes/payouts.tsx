@@ -11,7 +11,7 @@ import { usePaymentsSummary } from "@/hooks/queries/use-payments";
 import type { AdminRestaurantPayoutResponse } from "@/types";
 
 export const Route = createFileRoute("/payouts")({
-  head: () => ({ meta: [{ title: "Payouts | Go4Food Admin" }] }),
+  head: () => ({ meta: [{ title: "Payouts | Mr. Breado Admin" }] }),
   component: PayoutsPage,
 });
 

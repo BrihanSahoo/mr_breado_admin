@@ -10,7 +10,7 @@ import type { CategoryResponse } from "@/services/categories.service";
 import { Layers, Plus, Pencil, Trash2, Tag } from "lucide-react";
 
 export const Route = createFileRoute("/categories")({
-  head: () => ({ meta: [{ title: "Categories | Go4Food Admin" }] }),
+  head: () => ({ meta: [{ title: "Categories | Mr. Breado Admin" }] }),
   component: CategoriesPage,
 });
 

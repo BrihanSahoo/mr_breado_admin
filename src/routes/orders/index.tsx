@@ -35,7 +35,7 @@ import { toast } from "sonner";
 import type { OrderStatus, SellerOrderResponse } from "@/types";
 
 export const Route = createFileRoute("/orders/")({
-  head: () => ({ meta: [{ title: "Orders | Go4Food Admin" }] }),
+  head: () => ({ meta: [{ title: "Orders | Mr. Breado Admin" }] }),
   component: () => <OrdersPage />,
 });
 

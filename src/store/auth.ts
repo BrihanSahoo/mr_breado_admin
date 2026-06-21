@@ -14,7 +14,7 @@ import { useSyncExternalStore } from "react";
 
 type AuthState = { token: string | null; tokenType: string | null };
 
-const STORAGE_KEY = "go4food.admin.session";
+const STORAGE_KEY = "mr_breado.admin.session";
 
 const EMPTY: AuthState = Object.freeze({ token: null, tokenType: null }) as AuthState;
 

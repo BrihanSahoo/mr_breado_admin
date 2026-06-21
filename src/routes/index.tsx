@@ -40,7 +40,7 @@ function formatCurrency(value: number | string | null | undefined) {
 
 export const Route = createFileRoute("/")(
   {
-    head: () => ({ meta: [{ title: "Dashboard | Go4Food Admin" }] }),
+    head: () => ({ meta: [{ title: "Dashboard | Mr. Breado Admin" }] }),
     component: Dashboard,
   }
 );

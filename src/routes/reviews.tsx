@@ -7,7 +7,7 @@ import { useReviews } from "@/hooks/queries/use-reviews";
 import type { OrderReviewResponse } from "@/types";
 
 export const Route = createFileRoute("/reviews")({
-  head: () => ({ meta: [{ title: "Reviews | Go4Food Admin" }] }),
+  head: () => ({ meta: [{ title: "Reviews | Mr. Breado Admin" }] }),
   component: ReviewsPage,
 });
 

@@ -8,7 +8,7 @@ import { useUsers } from "@/hooks/queries/use-users";
 import type { AdminUserResponse } from "@/types";
 
 export const Route = createFileRoute("/owners")({
-  head: () => ({ meta: [{ title: "Owners | Go4Food Admin" }] }),
+  head: () => ({ meta: [{ title: "Owners | Mr. Breado Admin" }] }),
   component: OwnersPage,
 });
 

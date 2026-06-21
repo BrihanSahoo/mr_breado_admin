@@ -9,7 +9,7 @@ import { useCreateCuisine, useUpdateCuisine, useDeleteCuisine, useToggleCuisineS
 import { Soup, Plus, Pencil, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/cuisine")({
-  head: () => ({ meta: [{ title: "Cuisine | Go4Food Admin" }] }),
+  head: () => ({ meta: [{ title: "Cuisine | Mr. Breado Admin" }] }),
   component: () => {
     const { data, isLoading, error } = useCuisines();
     type Row = { id: string; name: string; status?: string; img?: string; imageUrl?: string };

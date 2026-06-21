@@ -8,7 +8,7 @@ import {
 import type { BannerRequest, BannerResponse } from "@/types";
 
 export const Route = createFileRoute("/banners")({
-  head: () => ({ meta: [{ title: "Banners | Go4Food Admin" }] }),
+  head: () => ({ meta: [{ title: "Banners | Mr. Breado Admin" }] }),
   component: BannersPage,
 });
 

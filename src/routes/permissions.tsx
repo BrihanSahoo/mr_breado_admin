@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/permissions")({
-  head: () => ({ meta: [{ title: "Permissions | Go4Food Admin" }] }),
+  head: () => ({ meta: [{ title: "Permissions | Mr. Breado Admin" }] }),
   component: PermissionsPage,
 });
 
