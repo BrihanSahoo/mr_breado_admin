@@ -216,6 +216,7 @@ export const endpoints = {
       preparing: (id: number | string) => `/admin/mr-breado/orders/${id}/preparing`,
       ready: (id: number | string) => `/admin/mr-breado/orders/${id}/ready`,
       reject: (id: number | string) => `/admin/mr-breado/orders/${id}/reject`,
+      cancel: (id: number | string) => `/admin/mr-breado/orders/${id}/cancel`,
       invoicePdf: (id: number | string) => `/admin/mr-breado/orders/${id}/invoice.pdf`,
       sendInvoice: (id: number | string) => `/admin/mr-breado/orders/${id}/invoice/send-to-customer`,
       products: "/admin/mr-breado/products",

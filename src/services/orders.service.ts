@@ -157,6 +157,12 @@ export const ordersService = {
       url: endpoints.admin.mrBreado.ready(id),
       method: "POST",
     }),
+  cancel: (id: number | string) =>
+    request<SellerOrderDetailResponse>({
+      url: endpoints.admin.mrBreado.cancel(id),
+      method: "POST",
+      data: {},
+    }),
   reject: (id: number | string, reason: string) =>
     request<SellerOrderDetailResponse>({
       url: endpoints.admin.mrBreado.reject(id),

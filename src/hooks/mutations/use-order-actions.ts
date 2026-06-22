@@ -3,13 +3,14 @@ import { toast } from "sonner";
 import { ordersService } from "@/services/orders.service";
 import { orderKeys } from "@/hooks/queries/use-orders";
 
-type Action = "accept" | "preparing" | "ready" | "reject" | "sendInvoice" | "downloadInvoice";
+type Action = "accept" | "preparing" | "ready" | "cancel" | "reject" | "sendInvoice" | "downloadInvoice";
 
 function labelFor(action: Action) {
   switch (action) {
     case "accept": return "Order accepted";
     case "preparing": return "Order moved to preparing";
     case "ready": return "Order marked ready";
+    case "cancel": return "Order cancelled";
     case "reject": return "Order rejected";
     case "sendInvoice": return "Invoice sent to customer";
     case "downloadInvoice": return "Invoice downloaded";
@@ -24,6 +25,7 @@ export function useOrderAction() {
         case "accept": return ordersService.accept(vars.id);
         case "preparing": return ordersService.preparing(vars.id);
         case "ready": return ordersService.ready(vars.id);
+        case "cancel": return ordersService.cancel(vars.id);
         case "reject": return ordersService.reject(vars.id, vars.reason ?? "Rejected by admin");
         case "sendInvoice": return ordersService.sendInvoice(vars.id);
         case "downloadInvoice": return ordersService.downloadInvoice(vars.id, vars.orderNumber);

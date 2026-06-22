@@ -23,6 +23,7 @@ import {
   Store,
   ToggleLeft,
   ToggleRight,
+  Ban,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Dialog, DialogContent, DialogClose, DialogTitle } from "@/components/ui/dialog";
@@ -42,7 +43,7 @@ export const Route = createFileRoute("/orders/")({
 const ACTIVE_STATUSES = new Set(["PENDING", "ACCEPTED", "PREPARING", "READY", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY"]);
 const FINAL_STATUSES = new Set(["DELIVERED", "CANCELLED", "REJECTED"]);
 
-type OrderActionName = "accept" | "preparing" | "ready" | "reject" | "sendInvoice" | "downloadInvoice";
+type OrderActionName = "accept" | "preparing" | "ready" | "cancel" | "reject" | "sendInvoice" | "downloadInvoice";
 
 function normalizeStatus(status?: string) {
   return String(status || "").trim().toUpperCase().replaceAll(" ", "_");
@@ -79,6 +80,7 @@ function isActionAlreadyDone(order: SellerOrderResponse, action: OrderActionName
   if (action === "accept") return status !== "PENDING";
   if (action === "preparing") return ["PREPARING", "READY", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED", "REJECTED"].includes(status);
   if (action === "ready") return ["READY", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED", "REJECTED"].includes(status);
+  if (action === "cancel") return FINAL_STATUSES.has(status);
   if (action === "reject") return FINAL_STATUSES.has(status);
   if (action === "sendInvoice") return localDone[key] || getStoredAction(order.id, action);
   return false;
@@ -356,6 +358,7 @@ function OrderActions({ order, isPending, localDone, onView, onAction, expanded 
     <IconAction label="Accept" icon={<Check className="h-4 w-4" />} onClick={() => onAction({ id: order.id, action: "accept" })} tone="success" disabled={disabled("accept")} />
     <IconAction label="Prep" icon={<ChefHat className="h-4 w-4" />} onClick={() => onAction({ id: order.id, action: "preparing" })} tone="warning" disabled={disabled("preparing")} />
     <IconAction label="Ready" icon={<PackageCheck className="h-4 w-4" />} onClick={() => onAction({ id: order.id, action: "ready" })} tone="primary" disabled={disabled("ready")} />
+    <IconAction label="Cancel" icon={<Ban className="h-4 w-4" />} onClick={() => onAction({ id: order.id, action: "cancel" })} tone="danger" disabled={disabled("cancel")} />
     <IconAction label={expanded ? "Download Invoice" : "PDF"} icon={<FileDown className="h-4 w-4" />} onClick={() => onAction({ id: order.id, action: "downloadInvoice", orderNumber: order.orderNumber })} disabled={isPending} />
     <IconAction label={expanded ? "Send Invoice" : "Send"} icon={<Send className="h-4 w-4" />} onClick={() => onAction({ id: order.id, action: "sendInvoice" })} tone="info" disabled={disabled("sendInvoice")} />
     <IconAction label="Reject" icon={<X className="h-4 w-4" />} onClick={reject} tone="danger" disabled={disabled("reject")} />
