@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Building2, CalendarDays, KeyRound, Package, TrendingDown, TrendingUp, Download, Plus } from "lucide-react";
+import { Building2, CalendarDays, KeyRound, Package, TrendingDown, TrendingUp, Download, Plus, CheckCircle2, Trash2, Eye, EyeOff, Store } from "lucide-react";
 import { toast } from "sonner";
 import { businessOutletsService } from "@/services/business-outlets.service";
 import { OutletCommandCenterPage } from "@/components/business-outlets/OutletCommandCenter";
@@ -36,12 +36,6 @@ function outletAddress(outlet: any): string {
   return Array.from(new Set(all)).join(", " ) || "Address not configured";
 }
 
-function outletMongoId(outlet: any): string {
-  const candidates = [outlet?._id, outlet?.mongoId, outlet?.outletMongoId, outlet?.outletId, outlet?.id];
-  const mongoId = candidates.map((v) => String(v ?? "").trim()).find((v) => /^[a-f0-9]{24}$/i.test(v));
-  return mongoId || "";
-}
-
 
 function BusinessOutletsPage() {
   const routePathname = useRouterState({ select: (s) => s.location.pathname });
@@ -62,6 +56,10 @@ function BusinessOutletsList() {
   const [credentialOutlet, setCredentialOutlet] = useState<any | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [dashboardOutletId, setDashboardOutletId] = useState<string | null>(null);
+  const selectedOutletQuery = useQuery({ queryKey: ["admin-selected-outlet"], queryFn: () => businessOutletsService.selectedOutlet() });
+  const selectedOutletId = String(selectedOutletQuery.data?.outletId || selectedOutletQuery.data?.data?.outletId || "");
+  const chooseOutlet = useMutation({ mutationFn: (outletId: string) => businessOutletsService.selectOutlet(outletId), onSuccess: () => { toast.success("Admin operating outlet updated"); qc.invalidateQueries({ queryKey: ["admin-selected-outlet"] }); }, onError: (e:any)=>toast.error(e?.message||"Unable to select outlet") });
+  const deleteOutlet = useMutation({ mutationFn: (id:string) => businessOutletsService.deleteOutlet(id), onSuccess:()=>{toast.success("Outlet deleted"); qc.invalidateQueries({queryKey:["business-dashboard"]}); qc.invalidateQueries({queryKey:["business-outlets-list"]});}, onError:(e:any)=>toast.error(e?.message||"Unable to delete outlet") });
 
   const dashboard = useQuery({ queryKey: ["business-dashboard", from, to], queryFn: () => businessOutletsService.dashboard({ from, to }) });
   const outletListQuery = useQuery({ queryKey: ["business-outlets-list"], queryFn: () => businessOutletsService.list() });
@@ -89,7 +87,7 @@ function BusinessOutletsList() {
         <div>
           <div className="flex items-center gap-2 text-sm font-semibold text-primary"><Building2 className="h-4 w-4" /> Mr. Breado Head Office</div>
           <h1 className="mt-1 text-3xl font-bold tracking-tight">Business Outlets Control</h1>
-          <p className="text-sm text-muted-foreground">Track every outlet's sales, stock, performance, credentials, and day-close ledger.</p>
+          <p className="text-sm text-muted-foreground">Track every outlet's sales, stock, performance, credentials, and day-close ledger.</p><div className="mt-3 inline-flex items-center gap-2 rounded-full border bg-background/70 px-3 py-1.5 text-xs font-semibold"><Store className="h-3.5 w-3.5 text-primary"/>Admin seller outlet: {selectedOutletQuery.data?.outlet?.name || selectedOutletQuery.data?.data?.outlet?.name || "Not selected"}</div>
         </div>
         <div className="flex flex-wrap gap-2">
           <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-40" />
@@ -120,7 +118,7 @@ function BusinessOutletsList() {
 
       <div className="grid gap-4 xl:grid-cols-3">
         {outlets.map((o: any) => (
-          <Card key={String(o.id || o.outletId || o._id || o.slug || o.name)} className="overflow-hidden rounded-3xl transition hover:border-primary/60 hover:shadow-lg">
+          <Card key={String(o.id || o.outletId || o._id || o.slug || o.name)} className={`overflow-hidden rounded-3xl transition hover:border-primary/60 hover:shadow-lg ${selectedOutletId===String(o.id||o.outletId||o._id)?"border-primary ring-2 ring-primary/30 shadow-[0_0_32px_rgba(249,115,22,.22)]":""}`}>
             <CardHeader className="border-b bg-muted/30">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -146,7 +144,9 @@ function BusinessOutletsList() {
                 <Button size="sm" onClick={() => setDashboardOutletId(String(o.id || o.outletId || o._id))}>Full Dashboard</Button>
                 <Button size="sm" variant="outline" onClick={() => setSelected(o)}><CalendarDays className="mr-2 h-4 w-4" />Quick Ledger</Button>
                 <Button size="sm" variant="outline" onClick={() => setCredentialOutlet(o)}><KeyRound className="mr-2 h-4 w-4" />Login Credentials</Button>
+                <Button size="sm" variant={selectedOutletId===String(o.id||o.outletId||o._id)?"default":"outline"} onClick={() => chooseOutlet.mutate(String(o.id||o.outletId||o._id))}><CheckCircle2 className="mr-2 h-4 w-4" />{selectedOutletId===String(o.id||o.outletId||o._id)?"Selected for seller app":"Use as own outlet"}</Button>
                 <Button size="sm" variant="outline" onClick={() => setSelected(o)}><Package className="mr-2 h-4 w-4" />Stock</Button>
+                <Button size="sm" variant="destructive" onClick={() => { if(window.confirm(`Delete ${o.name||o.outletName}? This cannot be undone.`)) deleteOutlet.mutate(String(o.id||o.outletId||o._id)); }}><Trash2 className="mr-2 h-4 w-4" />Delete</Button>
               </div>
             </CardContent>
           </Card>
@@ -176,39 +176,24 @@ function OutletForm({ onSubmit }: { onSubmit: (data: any) => void }) {
 }
 
 function CredentialsForm({ outlet }: { outlet: any }) {
-  const outletId = outletMongoId(outlet);
-  const [data, setData] = useState<any>({ name: outlet?.managerName || "Outlet Manager", username: outlet?.username || outlet?.outletCode || "", phone: outlet?.managerPhone || "", email: outlet?.managerEmail || outlet?.email || "", password: "" });
+  const id = String(outlet?._id || outlet?.mongoId || outlet?.outletId || outlet?.id || "");
+  const previous = useQuery({ queryKey:["outlet-credentials",id], enabled:!!id, queryFn:()=>businessOutletsService.credentials(id) });
+  const existing = previous.data?.data ?? previous.data ?? {};
+  const [data, setData] = useState<any>({ name: outlet?.managerName || "Outlet Manager", username: "", phone: outlet?.managerPhone || "", email: outlet?.email || outlet?.managerEmail || "", password: "", confirmPassword: "" });
+  const [showPassword,setShowPassword]=useState(false);
+  useEffect(()=>{ if(previous.isSuccess) setData((d:any)=>({...d,name:existing.managerName||d.name,username:existing.username||d.username,phone:existing.phone||d.phone,email:existing.email||d.email})); },[previous.isSuccess]);
   const mutation = useMutation({
-    mutationFn: () => {
-      if (!outletId) throw Object.assign(new Error("Refresh the page: this outlet is missing its MongoDB id."), { backendMessage: "Refresh the page: this outlet is missing its MongoDB id." });
-      return businessOutletsService.setCredentials(outletId, {
-        name: String(data.name || "").trim(),
-        username: String(data.username || "").trim().toLowerCase(),
-        phone: String(data.phone || "").replace(/\s+/g, "").trim(),
-        email: String(data.email || "").trim().toLowerCase(),
-        password: String(data.password || ""),
-      });
-    },
-    onSuccess: (result: any) => { toast.success(`Outlet login saved. Use ${result?.loginWith || data.username || data.email || data.phone} to sign in.`); setData((d:any)=>({...d,password:""})); },
-    onError: (error: any) => toast.error(error?.backendMessage || error?.message || "Unable to save outlet credentials"),
+    mutationFn: () => businessOutletsService.setCredentials(id, {name:data.name,username:data.username,phone:data.phone,email:data.email,password:data.password}),
+    onSuccess: (result: any) => { toast.success(`Outlet login saved. Use ${result?.loginWith || result?.data?.loginWith || data.username || data.email || data.phone} to sign in.`); setData((d:any)=>({...d,password:"",confirmPassword:""})); previous.refetch(); },
+    onError: (error: any) => toast.error(error?.message || "Unable to save outlet credentials"),
   });
-  const submit = (e: any) => {
-    e.preventDefault();
-    const username = String(data.username || "").trim().toLowerCase();
-    const email = String(data.email || "").trim().toLowerCase();
-    const phone = String(data.phone || "").replace(/\s+/g, "").trim();
-    if (!outletId) return toast.error("Refresh the page: this outlet is missing its MongoDB id.");
-    if (!username && !email && !phone) return toast.error("Enter a username, email or phone");
-    if (username && !/^[a-z0-9._-]{3,40}$/.test(username)) return toast.error("Username must be 3-40 characters and use letters, numbers, dot, underscore or hyphen.");
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast.error("Enter a valid email address");
-    if (phone && !/^\+?[0-9]{8,15}$/.test(phone)) return toast.error("Enter a valid phone number");
-    if (String(data.password || "").length < 8) return toast.error("Password must contain at least 8 characters");
-    mutation.mutate();
-  };
+  const submit = (e: any) => { e.preventDefault(); if(!id)return toast.error("Outlet id is missing"); if (!String(data.username || data.email || data.phone).trim()) return toast.error("Enter a username, email or phone"); if (String(data.password || "").length < 8) return toast.error("Password must contain at least 8 characters"); if(data.password!==data.confirmPassword)return toast.error("Password and confirmation do not match"); mutation.mutate(); };
   return <form className="max-h-[82vh] space-y-3 overflow-y-auto pr-1" onSubmit={submit}>
     <DialogHeader><DialogTitle>Set Outlet Login - {outlet?.name}</DialogTitle></DialogHeader>
-    <div className="rounded-xl border bg-muted/30 p-3 text-sm text-muted-foreground">The seller can sign in with the username, email, or phone entered here. Saving replaces the old password for this outlet manager. Username, email, and phone must not belong to another admin, seller, rider, or customer account.</div>
-    {[["name","Manager Name"],["username","Username"],["phone","Phone"],["email","Email"],["password","New Password"]].map(([k,l]) => <div key={k} className="space-y-1"><Label>{l}</Label><Input autoCapitalize="none" autoComplete={k === "password" ? "new-password" : "off"} type={k === "password" ? "password" : "text"} value={data[k] ?? ""} onChange={(e) => setData((d:any) => ({...d,[k]: e.target.value}))} /></div>)}
+    <div className="rounded-xl border bg-muted/30 p-3 text-sm text-muted-foreground">Previous login values are loaded below. Passwords are securely hashed and cannot be recovered; enter and confirm a new password to replace it.</div>
+    {existing.configured && <div className="grid grid-cols-2 gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs"><div><b>Current username</b><br/>{existing.username||"—"}</div><div><b>Current email</b><br/>{existing.email||"—"}</div><div><b>Current phone</b><br/>{existing.phone||"—"}</div><div><b>Password</b><br/>{existing.passwordConfigured?"Configured securely":"Not configured"}</div></div>}
+    {[['name','Manager Name'],['username','Username'],['phone','Phone'],['email','Email']].map(([k,l]) => <div key={k} className="space-y-1"><Label>{l}</Label><Input autoCapitalize="none" value={data[k] ?? ""} onChange={(e) => setData((d:any) => ({...d,[k]: e.target.value}))} /></div>)}
+    {[['password','New Password'],['confirmPassword','Confirm Password']].map(([k,l])=><div key={k} className="space-y-1"><Label>{l}</Label><div className="relative"><Input type={showPassword?'text':'password'} value={data[k]??''} onChange={e=>setData((d:any)=>({...d,[k]:e.target.value}))} className="pr-11"/><button type="button" onClick={()=>setShowPassword(v=>!v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">{showPassword?<EyeOff className="h-4 w-4"/>:<Eye className="h-4 w-4"/>}</button></div></div>)}
     <Button disabled={mutation.isPending} type="submit" className="w-full">{mutation.isPending ? "Saving credentials..." : "Save Login Credentials"}</Button>
   </form>;
 }
