@@ -203,3 +203,14 @@ html.theme-luxury body {
 @media (max-width: 900px) {
   .admin-table-scroll { overflow-x: auto; }
 }
+
+
+/* Responsive business dashboard safeguards */
+@media (max-width: 640px) {
+  html { -webkit-text-size-adjust: 100%; }
+  body { overflow-x: hidden; }
+  button, a, input, select, textarea { min-height: 44px; }
+  [role="dialog"] { max-width: calc(100vw - 1rem) !important; max-height: calc(100dvh - 1rem); overflow-y: auto; }
+  table { min-width: 760px; }
+  .admin-table-scroll, [data-responsive-table] { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}

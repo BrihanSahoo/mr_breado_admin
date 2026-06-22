@@ -86,7 +86,7 @@ export const businessOutletsService = {
     const data = await request<any>({ url: `/admin/outlets/${id}/available-products` });
     const allRaw = data?.all ?? data?.products ?? [];
     const assignedRaw = data?.assigned ?? data?.items ?? [];
-    const normalize = (row: any) => ({ ...row, id: row.id ?? row._id ?? row.productId, productId: row.productId?._id ?? row.productId ?? row.id ?? row._id, title: row.title ?? row.name ?? row.productName, productName: row.productName ?? row.title ?? row.name, imageUrl: deepImage(row.imageUrl ?? row.image ?? row.images ?? row.productId?.images), image: deepImage(row.imageUrl ?? row.image ?? row.images ?? row.productId?.images), foodType: row.foodType ?? row.food_type ?? row.productId?.foodType, isVeg: String(row.foodType ?? row.food_type ?? row.productId?.foodType ?? '').toUpperCase() === 'VEG' || row.isVeg === true, categoryName: row.categoryName ?? row.categoryId?.name ?? row.productId?.categoryId?.name ?? '' });
+    const normalize = (row: any) => ({ ...row, id: row.id ?? row._id ?? row.productId, productId: row.productId?._id ?? row.productId ?? row.id ?? row._id, assigned: row.assigned ?? Boolean(row.outletInventory) ?? false, title: row.title ?? row.name ?? row.productName, productName: row.productName ?? row.title ?? row.name, imageUrl: deepImage(row.imageUrl ?? row.image ?? row.images ?? row.productId?.images), image: deepImage(row.imageUrl ?? row.image ?? row.images ?? row.productId?.images), foodType: row.foodType ?? row.food_type ?? row.productId?.foodType, isVeg: String(row.foodType ?? row.food_type ?? row.productId?.foodType ?? '').toUpperCase() === 'VEG' || row.isVeg === true, categoryName: row.categoryName ?? row.categoryId?.name ?? row.productId?.categoryId?.name ?? '' });
     return { ...data, all: allRaw.map(normalize), assigned: assignedRaw.map(normalize) };
   },
   productCatalog: () => request<any>({ url: "/admin/products/catalog" }),
@@ -112,7 +112,11 @@ export const businessOutletsV41Service = {
       productName: row.productId?.name ?? row.productName ?? "Food item",
       imageUrl: row.productId?.images?.[0]?.url ?? row.imageUrl ?? "",
       categoryName: row.productId?.categoryId?.name ?? row.categoryName ?? "Uncategorised",
-      sellingPrice: row.priceOverride ?? row.productId?.offerPrice ?? row.productId?.basePrice ?? 0,
+      sellingPrice: row.offerPriceOverride ?? row.priceOverride ?? row.productId?.offerPrice ?? row.productId?.basePrice ?? 0,
+      price: row.offerPriceOverride ?? row.priceOverride ?? row.productId?.offerPrice ?? row.productId?.basePrice ?? 0,
+      stockQuantity: Number(row.stockQuantity ?? 0),
+      reservedQuantity: Number(row.reservedQuantity ?? 0),
+      availableStock: Math.max(0, Number(row.stockQuantity ?? 0) - Number(row.reservedQuantity ?? 0)),
       lowStockAlert: row.lowStockThreshold ?? 5,
       isAvailable: row.available ?? row.enabled ?? false,
     }));
@@ -128,7 +132,7 @@ export const businessOutletsV41Service = {
     const data = await request<any>({ url: `/admin/outlets/${id}/available-products` });
     const allRaw = data?.all ?? data?.products ?? [];
     const assignedRaw = data?.assigned ?? data?.items ?? [];
-    const normalize = (row: any) => ({ ...row, id: row.id ?? row._id ?? row.productId, productId: row.productId?._id ?? row.productId ?? row.id ?? row._id, title: row.title ?? row.name ?? row.productName, productName: row.productName ?? row.title ?? row.name, imageUrl: deepImage(row.imageUrl ?? row.image ?? row.images ?? row.productId?.images), image: deepImage(row.imageUrl ?? row.image ?? row.images ?? row.productId?.images), foodType: row.foodType ?? row.food_type ?? row.productId?.foodType, isVeg: String(row.foodType ?? row.food_type ?? row.productId?.foodType ?? '').toUpperCase() === 'VEG' || row.isVeg === true, categoryName: row.categoryName ?? row.categoryId?.name ?? row.productId?.categoryId?.name ?? '' });
+    const normalize = (row: any) => ({ ...row, id: row.id ?? row._id ?? row.productId, productId: row.productId?._id ?? row.productId ?? row.id ?? row._id, assigned: row.assigned ?? Boolean(row.outletInventory) ?? false, title: row.title ?? row.name ?? row.productName, productName: row.productName ?? row.title ?? row.name, imageUrl: deepImage(row.imageUrl ?? row.image ?? row.images ?? row.productId?.images), image: deepImage(row.imageUrl ?? row.image ?? row.images ?? row.productId?.images), foodType: row.foodType ?? row.food_type ?? row.productId?.foodType, isVeg: String(row.foodType ?? row.food_type ?? row.productId?.foodType ?? '').toUpperCase() === 'VEG' || row.isVeg === true, categoryName: row.categoryName ?? row.categoryId?.name ?? row.productId?.categoryId?.name ?? '' });
     return { ...data, all: allRaw.map(normalize), assigned: assignedRaw.map(normalize) };
   },
   productCatalog: () => request<any>({ url: "/admin/products/catalog" }),

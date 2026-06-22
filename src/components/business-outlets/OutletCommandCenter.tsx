@@ -41,8 +41,8 @@ export function OutletCommandCenterPage({ outletId, onBack }: { outletId: string
   const [assignOpen, setAssignOpen] = useState(false);
   const [gstinOpen, setGstinOpen] = useState(false);
   const [stockOpen, setStockOpen] = useState<any | null>(null);
-  const query = useQuery({ queryKey: ["outlet-v41-dashboard", outletId, from, to], queryFn: () => businessOutletsV41Service.fullDashboard(outletId, { from, to }) });
-  const ordersQuery = useQuery({ queryKey: ["outlet-order-history", outletId], queryFn: () => businessOutletsV41Service.orders(outletId) });
+  const query = useQuery({ queryKey: ["outlet-v41-dashboard", outletId, from, to], queryFn: () => businessOutletsV41Service.fullDashboard(outletId, { from, to }), refetchInterval: 15000, refetchOnWindowFocus: true });
+  const ordersQuery = useQuery({ queryKey: ["outlet-order-history", outletId], queryFn: () => businessOutletsV41Service.orders(outletId), refetchInterval: 10000, refetchOnWindowFocus: true });
   const exportCsv = useMutation({ mutationFn: () => businessOutletsV41Service.exportOutletAccounting(outletId, from, to) });
   const data = query.data ?? {};
   const outlet = data.outlet ?? {};
@@ -82,24 +82,23 @@ export function OutletCommandCenterPage({ outletId, onBack }: { outletId: string
 
     {!outlet.gstin && <div className="flex flex-col gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 md:flex-row md:items-center md:justify-between"><div><p className="font-semibold">GSTIN required for outlet invoices</p><p className="text-sm text-muted-foreground">Add this outlet GSTIN before issuing customer tax invoices.</p></div><Button variant="destructive" onClick={()=>setGstinOpen(true)}>Add GSTIN now</Button></div>}
 
-    <div className="grid gap-4 md:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <Metric title="Total Sales" value={money(summary.totalSales)} icon={<WalletCards className="h-5 w-5" />} />
       <Metric title="Online Sales" value={money(summary.onlineSales)} />
+      <Metric title="COD Sales" value={money(summary.codSales)} />
       <Metric title="Offline Sales" value={money(summary.offlineSales)} />
-      <Metric title="Orders" value={summary.orders ?? 0} />
     </div>
-    <div className="grid gap-4 md:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <Metric title="Total Orders" value={summary.totalOrders ?? summary.orders ?? 0} />
+      <Metric title="Active Orders" value={summary.activeOrders ?? 0} icon={<Activity className="h-5 w-5" />} />
+      <Metric title="Delivered" value={summary.deliveredOrders ?? 0} icon={<TrendingUp className="h-5 w-5" />} />
+      <Metric title="Cancelled" value={summary.cancelledOrders ?? 0} icon={<TrendingDown className="h-5 w-5" />} />
+    </div>
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <Metric title="Average Order" value={money(summary.averageOrderValue)} />
-      <Metric title="Stock Items" value={summary.stockItems ?? 0} />
-      <Metric title="Low Stock" value={summary.lowStock ?? 0} />
-      <Metric title="Bookings" value={summary.bookings ?? 0} />
-    </div>
-
-    <div className="grid gap-4 xl:grid-cols-4">
-      <Metric title="Today Sales" value={money(summary.todaySales ?? summary.totalSales)} icon={<IndianRupee className="h-5 w-5" />} />
-      <Metric title="This Week" value={money(summary.weekSales ?? 0)} icon={<Activity className="h-5 w-5" />} />
-      <Metric title="This Month" value={money(summary.monthSales ?? 0)} icon={<CalendarDays className="h-5 w-5" />} />
-      <Metric title="This Year" value={money(summary.yearSales ?? 0)} icon={<TrendingUp className="h-5 w-5" />} />
+      <Metric title="Available Stock" value={summary.availableStock ?? 0} />
+      <Metric title="Reserved Stock" value={summary.reservedStock ?? 0} />
+      <Metric title="Low Stock Items" value={summary.lowStock ?? 0} />
     </div>
 
     <div className="grid gap-4 xl:grid-cols-3">
@@ -182,13 +181,13 @@ export function OutletCommandCenterPage({ outletId, onBack }: { outletId: string
     </div>
 
     <div className="grid gap-4 xl:grid-cols-2">
-      <FoodCard title="Best selling foods" icon={<TrendingUp className="h-5 w-5 text-primary" />} rows={data.bestFoods ?? []} />
+      <FoodCard title="Best selling foods" icon={<TrendingUp className="h-5 w-5 text-primary" />} rows={data.topFoods ?? data.bestFoods ?? []} />
       <FoodCard title="Foods not selling well" icon={<TrendingDown className="h-5 w-5 text-destructive" />} rows={data.slowFoods ?? []} />
     </div>
 
     <Card><CardHeader><CardTitle className="flex items-center gap-2"><Package className="h-5 w-5" /> Current stock and money control</CardTitle></CardHeader><CardContent className="space-y-2">
       {(data.stock ?? []).length === 0 && <Empty text="No outlet stock added yet." />}
-      {(data.stock ?? []).map((s: any) => <div key={s.id || s.productId} className="grid gap-2 rounded-2xl border bg-muted/20 p-3 text-sm md:grid-cols-6 md:items-center"><b className="md:col-span-2">{s.productName}</b><span>Stock: {s.stockQuantity ?? s.stock_quantity}</span><span>Low alert: {s.lowStockAlert ?? s.low_stock_alert}</span><span>Price: {money(s.price)}</span><Button size="sm" variant="outline" onClick={() => setStockOpen(s)}>Update</Button></div>)}
+      {(data.stock ?? []).map((s: any) => <div key={s.id || s.productId} className="grid gap-2 rounded-2xl border bg-muted/20 p-3 text-sm sm:grid-cols-2 xl:grid-cols-7 xl:items-center"><b className="sm:col-span-2 xl:col-span-2">{s.productName}</b><span>Stock: {s.stockQuantity ?? s.stock_quantity ?? 0}</span><span>Available: {s.availableStock ?? Math.max(0, Number(s.stockQuantity || 0) - Number(s.reservedQuantity || 0))}</span><span>Low alert: {s.lowStockAlert ?? s.low_stock_alert}</span><span>Price: {money(s.price)}</span><Button size="sm" variant="outline" onClick={() => setStockOpen(s)}>Update</Button></div>)}
     </CardContent></Card>
 
     <Card><CardHeader><CardTitle>Recent stock movements and outlet activity</CardTitle></CardHeader><CardContent className="space-y-2">
@@ -223,10 +222,10 @@ function StockHealth({ summary }: { summary: any }) {
     <Row k="Stock value" v={money(summary.stockValue || 0)} />
   </div>;
 }
-function Metric({ title, value, icon }: { title: string; value: any; icon?: any }) { return <Card className="rounded-3xl"><CardContent className="p-5"><div className="flex items-center justify-between"><p className="text-sm text-muted-foreground">{title}</p>{icon}</div><p className="mt-2 text-2xl font-bold">{value}</p></CardContent></Card>; }
+function Metric({ title, value, icon }: { title: string; value: any; icon?: any }) { return <Card className="min-w-0 rounded-2xl"><CardContent className="p-4 sm:p-5"><div className="flex items-center justify-between"><p className="text-sm text-muted-foreground">{title}</p>{icon}</div><p className="mt-2 break-words text-xl font-bold sm:text-2xl">{value}</p></CardContent></Card>; }
 function Row({ k, v }: { k: string; v: any }) { return <div className="flex justify-between gap-4 rounded-xl bg-muted/30 px-3 py-2"><span className="text-muted-foreground">{k}</span><b className="text-right">{v || "--"}</b></div>; }
 function Empty({ text }: { text: string }) { return <div className="rounded-2xl border border-dashed p-6 text-center text-sm text-muted-foreground">{text}</div>; }
-function FoodCard({ title, icon, rows }: { title: string; icon: any; rows: any[] }) { return <Card><CardHeader><CardTitle className="flex items-center gap-2">{icon}{title}</CardTitle></CardHeader><CardContent className="space-y-2">{rows.length === 0 && <Empty text="No sales data yet." />}{rows.slice(0,10).map((f:any)=><div key={`${title}-${f.productId}`} className="flex justify-between rounded-xl bg-muted/30 px-3 py-2 text-sm"><span>{f.productName}</span><b>{f.soldQuantity ?? 0} sold · {money(f.grossSales)}</b></div>)}</CardContent></Card>; }
+function FoodCard({ title, icon, rows }: { title: string; icon: any; rows: any[] }) { return <Card><CardHeader><CardTitle className="flex items-center gap-2">{icon}{title}</CardTitle></CardHeader><CardContent className="space-y-2">{rows.length === 0 && <Empty text="No sales data yet." />}{rows.slice(0,10).map((f:any)=><div key={`${title}-${f.productId}`} className="flex justify-between rounded-xl bg-muted/30 px-3 py-2 text-sm"><span>{f.productName}</span><b>{f.soldQuantity ?? 0} sold · {money(f.revenue)}</b></div>)}</CardContent></Card>; }
 function LocationForm({ outlet, outletId, onDone }: { outlet: any; outletId: string; onDone: () => void }) { const [data,setData]=useState<any>({ latitude: outlet.latitude || "", longitude: outlet.longitude || "", serviceRadiusKm: outlet.serviceRadiusKm ?? outlet.service_radius_km ?? outlet.deliveryRadiusKm ?? 5, address: outletAddress(outlet) === "Address not configured" ? "" : outletAddress(outlet), googleMapLink: outlet.googleMapLink || "" }); const m=useMutation({ mutationFn:()=>businessOutletsV41Service.setLocation(outletId,data), onSuccess:()=>{toast.success("Outlet location updated");onDone();} }); return <form className="space-y-3" onSubmit={(e)=>{e.preventDefault();m.mutate();}}><DialogHeader><DialogTitle>Set exact outlet location</DialogTitle></DialogHeader><Label>Latitude (north/south, e.g. 20.5737)</Label><Input value={data.latitude} onChange={(e)=>setData((d:any)=>({...d,latitude:e.target.value}))}/><Label>Longitude (east/west, e.g. 86.5641)</Label><Input value={data.longitude} onChange={(e)=>setData((d:any)=>({...d,longitude:e.target.value}))}/><Label>Delivery radius km</Label><Input value={data.serviceRadiusKm} onChange={(e)=>setData((d:any)=>({...d,serviceRadiusKm:e.target.value}))}/><Label>Address</Label><Textarea value={data.address} onChange={(e)=>setData((d:any)=>({...d,address:e.target.value}))}/><Button className="w-full" type="submit">Save location</Button></form>; }
 function StockUpdateForm({ outletId, item, onDone }: { outletId: string; item: any; onDone: () => void }) { const [data,setData]=useState<any>({ productId:item?.productId || item?.product_id, stockQuantity:item?.stockQuantity ?? item?.stock_quantity ?? 0, lowStockAlert:item?.lowStockAlert ?? item?.low_stock_alert ?? 5, preparationMinutes:item?.preparation_minutes ?? 15, note:"Admin stock correction" }); const m=useMutation({ mutationFn:()=>businessOutletsV41Service.updateStock(outletId,[data]), onSuccess:()=>{toast.success("Stock updated");onDone();} }); return <form className="space-y-3" onSubmit={(e)=>{e.preventDefault();m.mutate();}}><DialogHeader><DialogTitle>Update stock - {item?.productName}</DialogTitle></DialogHeader><Label>Stock quantity</Label><Input value={data.stockQuantity} onChange={(e)=>setData((d:any)=>({...d,stockQuantity:e.target.value}))}/><Label>Low stock alert</Label><Input value={data.lowStockAlert} onChange={(e)=>setData((d:any)=>({...d,lowStockAlert:e.target.value}))}/><Label>Preparation minutes</Label><Input value={data.preparationMinutes} onChange={(e)=>setData((d:any)=>({...d,preparationMinutes:e.target.value}))}/><Label>Note</Label><Textarea value={data.note} onChange={(e)=>setData((d:any)=>({...d,note:e.target.value}))}/><Button className="w-full" type="submit">Save stock</Button></form>; }
 
@@ -305,12 +304,12 @@ function AssignOutletItemsForm({ outletId, onDone }: { outletId: string; onDone:
     const nextSelected: Record<string, boolean> = {};
     for (const p of rows) {
       const key = String(p.productId);
-      const alreadyAssigned = Number(p.stockQuantity ?? p.stock_quantity ?? p.stock_qty ?? 0) > 0 || p.outlet_id != null;
+      const alreadyAssigned = p.assigned === true || p.outletInventory != null || assignedById.has(key);
       nextSelected[key] = alreadyAssigned;
       nextDraft[key] = {
         productId: p.productId,
-        stockQuantity: p.stockQuantity ?? p.stock_quantity ?? p.stock_qty ?? "",
-        isAvailable: Number(p.stockQuantity ?? p.stock_quantity ?? p.stock_qty ?? 0) > 0,
+        stockQuantity: p.stockQuantity ?? p.stock_quantity ?? p.stock_qty ?? p.outletInventory?.stockQuantity ?? "",
+        isAvailable: (p.available ?? p.outletInventory?.available) === true || Number(p.stockQuantity ?? p.stock_quantity ?? p.stock_qty ?? p.outletInventory?.stockQuantity ?? 0) > 0,
         note: alreadyAssigned ? "Admin updated outlet stock" : "Admin added item to outlet",
       };
     }

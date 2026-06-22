@@ -206,13 +206,22 @@ function LogoutButton({ compact = false }: { compact?: boolean }) {
 
 export function AdminLayout({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  useEffect(() => {
+    const onPress = (event: Event) => {
+      const target = event.target as HTMLElement | null;
+      if (!target?.closest('button, a, [role=button]')) return;
+      if ('vibrate' in navigator && window.matchMedia('(pointer: coarse)').matches) navigator.vibrate?.(8);
+    };
+    document.addEventListener('click', onPress, { passive: true });
+    return () => document.removeEventListener('click', onPress);
+  }, []);
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background text-foreground">
+    <div className="flex min-h-[100dvh] w-full overflow-hidden bg-background text-foreground">
       <aside className="hidden w-[285px] shrink-0 border-r border-sidebar-border bg-sidebar shadow-card lg:block">
         <SidebarContent />
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-[72px] shrink-0 items-center gap-3 border-b border-border bg-card/50 px-4 backdrop-blur-xl">
+        <header className="flex min-h-[64px] shrink-0 items-center gap-2 border-b border-border bg-card/50 px-2 backdrop-blur-xl sm:min-h-[72px] sm:gap-3 sm:px-4">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <button className="rounded-md p-2 hover:bg-accent lg:hidden"><Menu className="h-5 w-5" /></button>
@@ -243,7 +252,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           <div className="hidden md:block"><LogoutButton compact /></div>
         </header>
         <main className="min-w-0 flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-[1680px] p-4 md:p-7">
+          <div className="mx-auto w-full max-w-[1680px] p-3 sm:p-4 md:p-7">
             {children}
           </div>
         </main>

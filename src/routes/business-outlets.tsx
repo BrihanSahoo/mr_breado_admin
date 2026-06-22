@@ -170,12 +170,23 @@ function OutletForm({ onSubmit }: { onSubmit: (data: any) => void }) {
 }
 
 function CredentialsForm({ outlet }: { outlet: any }) {
-  const [data, setData] = useState<any>({ name: outlet?.managerName || "Outlet Manager", username: outlet?.outletCode || "", password: "" });
-  const mutation = useMutation({ mutationFn: () => businessOutletsService.setCredentials(outlet.id || outlet.outletId, data), onSuccess: () => toast.success("Outlet credentials saved") });
-  return <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }}>
+  const [data, setData] = useState<any>({ name: outlet?.managerName || "Outlet Manager", username: outlet?.outletCode || "", phone: outlet?.managerPhone || "", email: outlet?.managerEmail || "", password: "" });
+  const mutation = useMutation({
+    mutationFn: () => businessOutletsService.setCredentials(outlet.id || outlet.outletId || outlet._id, data),
+    onSuccess: (result: any) => { toast.success(`Outlet login saved. Use ${result?.loginWith || data.username || data.email || data.phone} to sign in.`); setData((d:any)=>({...d,password:""})); },
+    onError: (error: any) => toast.error(error?.message || "Unable to save outlet credentials"),
+  });
+  const submit = (e: any) => {
+    e.preventDefault();
+    if (!String(data.username || data.email || data.phone).trim()) return toast.error("Enter a username, email or phone");
+    if (String(data.password || "").length < 8) return toast.error("Password must contain at least 8 characters");
+    mutation.mutate();
+  };
+  return <form className="max-h-[82vh] space-y-3 overflow-y-auto pr-1" onSubmit={submit}>
     <DialogHeader><DialogTitle>Set Outlet Login - {outlet?.name}</DialogTitle></DialogHeader>
-    {[["name","Manager Name"],["phone","Phone"],["email","Email"],["username","Username"],["password","Password"]].map(([k,l]) => <div key={k} className="space-y-1"><Label>{l}</Label><Input type={k === "password" ? "password" : "text"} value={data[k] ?? ""} onChange={(e) => setData((d:any) => ({...d,[k]: e.target.value}))} /></div>)}
-    <Button type="submit" className="w-full">Save Login Credentials</Button>
+    <div className="rounded-xl border bg-muted/30 p-3 text-sm text-muted-foreground">The seller can sign in with the username, email, or phone entered here. Saving replaces the old password for this outlet manager.</div>
+    {[["name","Manager Name"],["username","Username"],["phone","Phone"],["email","Email"],["password","New Password"]].map(([k,l]) => <div key={k} className="space-y-1"><Label>{l}</Label><Input autoCapitalize="none" autoComplete={k === "password" ? "new-password" : "off"} type={k === "password" ? "password" : "text"} value={data[k] ?? ""} onChange={(e) => setData((d:any) => ({...d,[k]: e.target.value}))} /></div>)}
+    <Button disabled={mutation.isPending} type="submit" className="w-full">{mutation.isPending ? "Saving credentials..." : "Save Login Credentials"}</Button>
   </form>;
 }
 
