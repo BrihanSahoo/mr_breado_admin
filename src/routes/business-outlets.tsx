@@ -36,6 +36,12 @@ function outletAddress(outlet: any): string {
   return Array.from(new Set(all)).join(", " ) || "Address not configured";
 }
 
+function outletMongoId(outlet: any): string {
+  const candidates = [outlet?._id, outlet?.mongoId, outlet?.outletMongoId, outlet?.outletId, outlet?.id];
+  const mongoId = candidates.map((v) => String(v ?? "").trim()).find((v) => /^[a-f0-9]{24}$/i.test(v));
+  return mongoId || "";
+}
+
 
 function BusinessOutletsPage() {
   const routePathname = useRouterState({ select: (s) => s.location.pathname });
@@ -170,21 +176,38 @@ function OutletForm({ onSubmit }: { onSubmit: (data: any) => void }) {
 }
 
 function CredentialsForm({ outlet }: { outlet: any }) {
-  const [data, setData] = useState<any>({ name: outlet?.managerName || "Outlet Manager", username: outlet?.outletCode || "", phone: outlet?.managerPhone || "", email: outlet?.managerEmail || "", password: "" });
+  const outletId = outletMongoId(outlet);
+  const [data, setData] = useState<any>({ name: outlet?.managerName || "Outlet Manager", username: outlet?.username || outlet?.outletCode || "", phone: outlet?.managerPhone || "", email: outlet?.managerEmail || outlet?.email || "", password: "" });
   const mutation = useMutation({
-    mutationFn: () => businessOutletsService.setCredentials(outlet.id || outlet.outletId || outlet._id, data),
+    mutationFn: () => {
+      if (!outletId) throw Object.assign(new Error("Refresh the page: this outlet is missing its MongoDB id."), { backendMessage: "Refresh the page: this outlet is missing its MongoDB id." });
+      return businessOutletsService.setCredentials(outletId, {
+        name: String(data.name || "").trim(),
+        username: String(data.username || "").trim().toLowerCase(),
+        phone: String(data.phone || "").replace(/\s+/g, "").trim(),
+        email: String(data.email || "").trim().toLowerCase(),
+        password: String(data.password || ""),
+      });
+    },
     onSuccess: (result: any) => { toast.success(`Outlet login saved. Use ${result?.loginWith || data.username || data.email || data.phone} to sign in.`); setData((d:any)=>({...d,password:""})); },
-    onError: (error: any) => toast.error(error?.message || "Unable to save outlet credentials"),
+    onError: (error: any) => toast.error(error?.backendMessage || error?.message || "Unable to save outlet credentials"),
   });
   const submit = (e: any) => {
     e.preventDefault();
-    if (!String(data.username || data.email || data.phone).trim()) return toast.error("Enter a username, email or phone");
+    const username = String(data.username || "").trim().toLowerCase();
+    const email = String(data.email || "").trim().toLowerCase();
+    const phone = String(data.phone || "").replace(/\s+/g, "").trim();
+    if (!outletId) return toast.error("Refresh the page: this outlet is missing its MongoDB id.");
+    if (!username && !email && !phone) return toast.error("Enter a username, email or phone");
+    if (username && !/^[a-z0-9._-]{3,40}$/.test(username)) return toast.error("Username must be 3-40 characters and use letters, numbers, dot, underscore or hyphen.");
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast.error("Enter a valid email address");
+    if (phone && !/^\+?[0-9]{8,15}$/.test(phone)) return toast.error("Enter a valid phone number");
     if (String(data.password || "").length < 8) return toast.error("Password must contain at least 8 characters");
     mutation.mutate();
   };
   return <form className="max-h-[82vh] space-y-3 overflow-y-auto pr-1" onSubmit={submit}>
     <DialogHeader><DialogTitle>Set Outlet Login - {outlet?.name}</DialogTitle></DialogHeader>
-    <div className="rounded-xl border bg-muted/30 p-3 text-sm text-muted-foreground">The seller can sign in with the username, email, or phone entered here. Saving replaces the old password for this outlet manager.</div>
+    <div className="rounded-xl border bg-muted/30 p-3 text-sm text-muted-foreground">The seller can sign in with the username, email, or phone entered here. Saving replaces the old password for this outlet manager. Username, email, and phone must not belong to another admin, seller, rider, or customer account.</div>
     {[["name","Manager Name"],["username","Username"],["phone","Phone"],["email","Email"],["password","New Password"]].map(([k,l]) => <div key={k} className="space-y-1"><Label>{l}</Label><Input autoCapitalize="none" autoComplete={k === "password" ? "new-password" : "off"} type={k === "password" ? "password" : "text"} value={data[k] ?? ""} onChange={(e) => setData((d:any) => ({...d,[k]: e.target.value}))} /></div>)}
     <Button disabled={mutation.isPending} type="submit" className="w-full">{mutation.isPending ? "Saving credentials..." : "Save Login Credentials"}</Button>
   </form>;
