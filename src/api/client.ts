@@ -143,7 +143,15 @@ api.interceptors.response.use(
     if (typeof console !== "undefined") {
       console.debug("[api]", status, error.response?.data?.message ?? error.message);
     }
-    return Promise.reject(Object.assign(new Error(safeMessage), { status }));
+    const backendMessage = String((error.response?.data as any)?.message ?? (error.response?.data as any)?.error ?? "").trim();
+    const code = String((error.response?.data as any)?.code ?? "").trim();
+    return Promise.reject(Object.assign(new Error(backendMessage || safeMessage), {
+      status,
+      code,
+      backendMessage,
+      safeMessage,
+      responseData: error.response?.data,
+    }));
   },
 );
 

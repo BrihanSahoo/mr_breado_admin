@@ -56,13 +56,13 @@ function BusinessOutletsList() {
   const [credentialOutlet, setCredentialOutlet] = useState<any | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [dashboardOutletId, setDashboardOutletId] = useState<string | null>(null);
-  const selectedOutletQuery = useQuery({ queryKey: ["admin-selected-outlet"], queryFn: () => businessOutletsService.selectedOutlet() });
+  const selectedOutletQuery = useQuery({ queryKey: ["admin-selected-outlet"], queryFn: () => businessOutletsService.selectedOutlet(), refetchInterval: 15_000, refetchOnWindowFocus: true });
   const selectedOutletId = String(selectedOutletQuery.data?.outletId || selectedOutletQuery.data?.data?.outletId || "");
-  const chooseOutlet = useMutation({ mutationFn: (outletId: string) => businessOutletsService.selectOutlet(outletId), onSuccess: () => { toast.success("Admin operating outlet updated"); qc.invalidateQueries({ queryKey: ["admin-selected-outlet"] }); }, onError: (e:any)=>toast.error(e?.message||"Unable to select outlet") });
+  const chooseOutlet = useMutation({ mutationFn: (outletId: string) => businessOutletsService.selectOutlet(outletId), onSuccess: async () => { toast.success("Admin operating outlet updated"); await qc.invalidateQueries({ queryKey: ["admin-selected-outlet"] }); await qc.invalidateQueries({ queryKey: ["business-outlets-list"] }); }, onError: (e:any)=>toast.error(e?.message||"Unable to select outlet") });
   const deleteOutlet = useMutation({ mutationFn: (id:string) => businessOutletsService.deleteOutlet(id), onSuccess:()=>{toast.success("Outlet deleted"); qc.invalidateQueries({queryKey:["business-dashboard"]}); qc.invalidateQueries({queryKey:["business-outlets-list"]});}, onError:(e:any)=>toast.error(e?.message||"Unable to delete outlet") });
 
-  const dashboard = useQuery({ queryKey: ["business-dashboard", from, to], queryFn: () => businessOutletsService.dashboard({ from, to }) });
-  const outletListQuery = useQuery({ queryKey: ["business-outlets-list"], queryFn: () => businessOutletsService.list() });
+  const dashboard = useQuery({ queryKey: ["business-dashboard", from, to], queryFn: () => businessOutletsService.dashboard({ from, to }), refetchInterval: 15_000, refetchOnWindowFocus: true });
+  const outletListQuery = useQuery({ queryKey: ["business-outlets-list"], queryFn: () => businessOutletsService.list(), refetchInterval: 20_000, refetchOnWindowFocus: true });
   const ensure = useMutation({ mutationFn: businessOutletsService.ensureSchema, onSuccess: () => toast.success("Enterprise outlet schema ready") });
   const createOutlet = useMutation({ mutationFn: businessOutletsService.createOutlet, onSuccess: () => { toast.success("Outlet created"); setCreateOpen(false); qc.invalidateQueries({ queryKey: ["business-dashboard"] }); qc.invalidateQueries({ queryKey: ["business-outlets-list"] }); } });
   const exportCsv = useMutation({ mutationFn: () => businessOutletsService.exportAccounting(from, to) });
@@ -89,7 +89,7 @@ function BusinessOutletsList() {
           <h1 className="mt-1 text-3xl font-bold tracking-tight">Business Outlets Control</h1>
           <p className="text-sm text-muted-foreground">Track every outlet's sales, stock, performance, credentials, and day-close ledger.</p><div className="mt-3 inline-flex items-center gap-2 rounded-full border bg-background/70 px-3 py-1.5 text-xs font-semibold"><Store className="h-3.5 w-3.5 text-primary"/>Admin seller outlet: {selectedOutletQuery.data?.outlet?.name || selectedOutletQuery.data?.data?.outlet?.name || "Not selected"}</div>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:flex xl:flex-wrap">
           <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-40" />
           <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-40" />
           <Button variant="outline" onClick={() => ensure.mutate()}>Prepare DB</Button>
@@ -140,7 +140,7 @@ function BusinessOutletsList() {
                 <div className="flex items-center gap-2 pt-2 font-semibold"><TrendingDown className="h-4 w-4 text-destructive" /> Slow foods</div>
                 {(o.slowFoods || []).slice(0, 3).map((f: any) => <div key={f.productId} className="flex justify-between rounded-xl bg-muted/40 px-3 py-2"><span>{f.productName}</span><span>{f.soldQuantity ?? 0}</span></div>)}
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:flex xl:flex-wrap">
                 <Button size="sm" onClick={() => setDashboardOutletId(String(o.id || o.outletId || o._id))}>Full Dashboard</Button>
                 <Button size="sm" variant="outline" onClick={() => setSelected(o)}><CalendarDays className="mr-2 h-4 w-4" />Quick Ledger</Button>
                 <Button size="sm" variant="outline" onClick={() => setCredentialOutlet(o)}><KeyRound className="mr-2 h-4 w-4" />Login Credentials</Button>

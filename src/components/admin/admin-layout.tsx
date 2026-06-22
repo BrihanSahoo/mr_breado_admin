@@ -210,7 +210,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
     const onPress = (event: Event) => {
       const target = event.target as HTMLElement | null;
       if (!target?.closest('button, a, [role=button]')) return;
-      if ('vibrate' in navigator && window.matchMedia('(pointer: coarse)').matches) navigator.vibrate?.(8);
+      if ('vibrate' in navigator && window.matchMedia('(pointer: coarse)').matches) navigator.vibrate?.(12);
     };
     document.addEventListener('click', onPress, { passive: true });
     return () => document.removeEventListener('click', onPress);

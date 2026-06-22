@@ -70,7 +70,7 @@ function normalizeOrder(raw: any): SellerOrderResponse {
     createdAt: String(firstValue(raw, ["createdAt", "created_at", "orderDate", "order_date"], "")),
     updatedAt: String(firstValue(raw, ["updatedAt", "updated_at"], "")),
     orderType: String(firstValue(raw, ["orderType", "order_type"], "DELIVERY")),
-    outletId: String(firstValue(raw, ["outletId", "outlet_id", "restaurantId", "restaurant_id"], "")) as any,
+    outletId: orderRef({ id: firstValue(raw, ["outletId", "outlet_id", "restaurantId", "restaurant_id"], "") }) as any,
     outletName: String(firstValue(raw, ["outletName", "outlet_name", "restaurantName", "restaurant_name"], firstValue(restaurant, ["name", "outletName"], "Mr. Breado Outlet"))),
     riderName: String(firstValue(raw, ["riderName", "rider_name", "deliveryBoyName", "delivery_boy_name"], "")),
     items: items.map((it: any, idx: number) => ({
@@ -122,6 +122,39 @@ async function tryRequest<T>(url: string, method: "GET" | "POST" = "GET", data?:
   return request<T>({ url, method, data, params });
 }
 
+
+function orderRef(raw: any): string {
+  const value = firstValue(raw, ["_id", "mongoId", "id", "orderId", "order_id", "orderNumber", "order_number", "slug"], "");
+  if (value && typeof value === "object") {
+    return String(firstValue(value, ["_id", "id", "mongoId"], ""));
+  }
+  return String(value ?? "");
+}
+
+async function actionWithFallback<T = any>(configs: Array<Record<string, any>>): Promise<T> {
+  let last: any;
+  for (const config of configs) {
+    try { return await request<T>(config); }
+    catch (error: any) {
+      last = error;
+      if (![404, 405].includes(Number(error?.status))) throw error;
+    }
+  }
+  throw last ?? Object.assign(new Error("No compatible backend route was found"), { status: 404 });
+}
+
+async function blobWithFallback(configs: Array<Record<string, any>>): Promise<Blob> {
+  let last: any;
+  for (const config of configs) {
+    try { return await downloadBlob(config); }
+    catch (error: any) {
+      last = error;
+      if (![404, 405, 409, 422].includes(Number(error?.status))) throw error;
+    }
+  }
+  throw last ?? Object.assign(new Error("Invoice or receipt is not available"), { status: 404 });
+}
+
 export const ordersService = {
   list: async (params: OrdersQuery = {}) => {
     const q = { page: params.page ?? 1, perPage: params.perPage ?? 20, status: params.status || undefined };
@@ -142,41 +175,46 @@ export const ordersService = {
       return normalizeOrder(fallback?.order ?? fallback?.data ?? fallback) as SellerOrderDetailResponse;
     }
   },
-  accept: (id: number | string) =>
-    request<SellerOrderDetailResponse>({
-      url: endpoints.admin.mrBreado.accept(id),
-      method: "POST",
-    }),
-  preparing: (id: number | string) =>
-    request<SellerOrderDetailResponse>({
-      url: endpoints.admin.mrBreado.preparing(id),
-      method: "POST",
-    }),
-  ready: (id: number | string) =>
-    request<SellerOrderDetailResponse>({
-      url: endpoints.admin.mrBreado.ready(id),
-      method: "POST",
-    }),
-  cancel: (id: number | string) =>
-    request<SellerOrderDetailResponse>({
-      url: endpoints.admin.mrBreado.cancel(id),
-      method: "POST",
-      data: {},
-    }),
-  reject: (id: number | string, reason: string) =>
-    request<SellerOrderDetailResponse>({
-      url: endpoints.admin.mrBreado.reject(id),
-      method: "POST",
-      data: { reason },
-    }),
+  accept: (id: number | string) => actionWithFallback<SellerOrderDetailResponse>([
+    { url: endpoints.admin.mrBreado.accept(id), method: "POST" },
+    { url: `/admin/orders/${id}/accept`, method: "POST" },
+    { url: `/admin/orders/${id}/status`, method: "PUT", data: { status: "ACCEPTED" } },
+  ]),
+  preparing: (id: number | string) => actionWithFallback<SellerOrderDetailResponse>([
+    { url: endpoints.admin.mrBreado.preparing(id), method: "POST" },
+    { url: `/admin/orders/${id}/preparing`, method: "POST" },
+    { url: `/admin/orders/${id}/prep`, method: "POST" },
+    { url: `/admin/orders/${id}/status`, method: "PUT", data: { status: "PREPARING" } },
+  ]),
+  ready: (id: number | string) => actionWithFallback<SellerOrderDetailResponse>([
+    { url: endpoints.admin.mrBreado.ready(id), method: "POST" },
+    { url: `/admin/orders/${id}/ready`, method: "POST" },
+    { url: `/admin/orders/${id}/status`, method: "PUT", data: { status: "READY" } },
+  ]),
+  cancel: (id: number | string) => actionWithFallback<SellerOrderDetailResponse>([
+    { url: endpoints.admin.mrBreado.cancel(id), method: "POST", data: {} },
+    { url: `/admin/orders/${id}/cancel`, method: "POST", data: {} },
+    { url: `/admin/orders/${id}/status`, method: "PUT", data: { status: "CANCELLED" } },
+  ]),
+  reject: (id: number | string, reason: string) => actionWithFallback<SellerOrderDetailResponse>([
+    { url: endpoints.admin.mrBreado.reject(id), method: "POST", data: { reason } },
+    { url: `/admin/orders/${id}/reject`, method: "POST", data: { reason } },
+    { url: `/admin/orders/${id}/status`, method: "PUT", data: { status: "REJECTED", reason } },
+  ]),
   downloadInvoice: async (id: number | string, orderNumber?: string) => {
-    const blob = await downloadBlob({ url: endpoints.admin.mrBreado.invoicePdf(id), method: "GET" });
+    const blob = await blobWithFallback([
+      { url: endpoints.admin.mrBreado.invoicePdf(id), method: "GET" },
+      { url: `/admin/orders/${id}/invoice.pdf`, method: "GET" },
+      { url: `/admin/orders/${id}/invoice`, method: "GET" },
+      { url: `/admin/orders/${id}/receipt.pdf`, method: "GET" },
+      { url: `/admin/orders/${id}/receipt`, method: "GET" },
+    ]);
     const clean = String(orderNumber || id).replace(/[^a-zA-Z0-9_-]/g, "_");
-    saveBlob(blob, `${clean}_invoice.pdf`);
+    saveBlob(blob, `${clean}_invoice_or_receipt.pdf`);
   },
-  sendInvoice: (id: number | string) =>
-    request<void>({
-      url: endpoints.admin.mrBreado.sendInvoice(id),
-      method: "POST",
-    }),
+  sendInvoice: (id: number | string) => actionWithFallback<void>([
+    { url: endpoints.admin.mrBreado.sendInvoice(id), method: "POST" },
+    { url: `/admin/orders/${id}/invoice/send-to-customer`, method: "POST" },
+    { url: `/admin/orders/${id}/send-invoice`, method: "POST" },
+  ]),
 };

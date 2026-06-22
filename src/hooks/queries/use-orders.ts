@@ -12,7 +12,9 @@ export function useOrders(query: OrdersQuery) {
     queryKey: orderKeys.list(query),
     queryFn: () => ordersService.list(query),
     placeholderData: keepPreviousData,
-    staleTime: 10_000,
+    staleTime: 5_000,
+    refetchInterval: 10_000,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -21,5 +23,7 @@ export function useOrder(id: number | string | null | undefined) {
     queryKey: orderKeys.detail(id ?? "none"),
     queryFn: () => ordersService.detail(id!),
     enabled: id != null,
+    refetchInterval: id != null ? 10_000 : false,
+    refetchOnWindowFocus: true,
   });
 }

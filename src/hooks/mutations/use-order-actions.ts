@@ -39,6 +39,6 @@ export function useOrderAction() {
       qc.invalidateQueries({ queryKey: orderKeys.all });
       qc.invalidateQueries({ queryKey: orderKeys.detail(v.id) });
     },
-    onError: (_e, v) => toast.error("Action could not be completed. Please refresh and try again.", { id: `order-${v.id}-${v.action}` }),
+    onError: (e: any, v) => toast.error(e?.backendMessage || e?.message || "Action could not be completed. Please refresh and try again.", { id: `order-${v.id}-${v.action}` }),
   });
 }

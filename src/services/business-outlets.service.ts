@@ -80,8 +80,21 @@ export const businessOutletsService = {
   stockSubmissions: (id: number | string) => request<any>({ url: `/admin/outlets/${id}/stock-submissions` }),
   credentials: (id: number | string) => request<any>({ url: `/admin/outlets/${id}/credentials` }),
   setCredentials: (id: number | string, data: Record<string, any>) => request<any>({ method: "POST", url: `/admin/outlets/${id}/credentials`, data }),
-  selectedOutlet: () => request<any>({ url: '/admin/selected-outlet' }),
-  selectOutlet: (outletId: string) => request<any>({ method: 'PUT', url: '/admin/selected-outlet', data: { outletId } }),
+  selectedOutlet: () => tryRequest<any>([
+    { url: "/admin/selected-outlet" },
+    { url: "/admin/operating-outlet" },
+    { url: "/admin/outlets/selected" },
+    { url: "/admin/settings/selected-outlet" },
+  ], { outletId: "", outlet: null }),
+  selectOutlet: (outletId: string) => tryRequest<any>([
+    { method: "PUT", url: "/admin/selected-outlet", data: { outletId } },
+    { method: "POST", url: "/admin/selected-outlet", data: { outletId } },
+    { method: "PUT", url: "/admin/operating-outlet", data: { outletId } },
+    { method: "POST", url: "/admin/outlets/select", data: { outletId } },
+  ], null).then((result) => {
+    if (!result) throw Object.assign(new Error("Selected-outlet endpoint is not available on the deployed backend"), { status: 404 });
+    return result;
+  }),
   deleteOutlet: (id: number | string) => request<any>({ method: 'DELETE', url: `/admin/outlets/${id}` }),
   calendar: (id: number | string, params?: Record<string, any>) => request<any>({ url: `/admin/outlets/${id}/calendar`, params }),
   performance: (id: number | string, params?: Record<string, any>) => request<any>({ url: `/admin/outlets/${id}/performance`, params }),
