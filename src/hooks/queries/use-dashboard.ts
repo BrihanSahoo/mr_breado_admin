@@ -7,6 +7,9 @@ export function useDashboard() {
   return useQuery({
     queryKey: dashboardKeys.all,
     queryFn: dashboardService.get,
-    staleTime: 30_000,
+    staleTime: 10_000,
+    refetchInterval: 15_000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 }

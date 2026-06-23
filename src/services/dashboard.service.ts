@@ -119,6 +119,35 @@ export const dashboardService = {
       }, 0);
       const delivered = orders.filter((o) => upper(o.status ?? o.orderStatus ?? o.order_status).includes("DELIVER")).length;
 
+      const dailyMap = new Map<string, { date: string; revenue: number; orders: number; online: number; cod: number }>();
+      const statusBreakdown: Record<string, number> = {};
+      const paymentBreakdown: Record<string, number> = {};
+      for (const order of orders) {
+        const created = new Date(order.createdAt ?? order.created_at ?? order.orderDate ?? Date.now());
+        if (!Number.isNaN(created.getTime())) {
+          const date = created.toISOString().slice(0, 10);
+          const row = dailyMap.get(date) ?? { date, revenue: 0, orders: 0, online: 0, cod: 0 };
+          const amount = n(order.grandTotal ?? order.grand_total ?? order.total ?? order.totalAmount ?? order.amount);
+          row.revenue += amount;
+          row.orders += 1;
+          const method = upper(order.paymentMethod ?? order.payment_method ?? order.paymentType ?? order.payment_type);
+          if (method.includes("COD") || method.includes("CASH")) row.cod += amount;
+          else if (method) row.online += amount;
+          dailyMap.set(date, row);
+        }
+        const status = upper(order.status ?? order.orderStatus ?? order.order_status) || "UNKNOWN";
+        statusBreakdown[status] = (statusBreakdown[status] ?? 0) + 1;
+        const payment = upper(order.paymentMethod ?? order.payment_method ?? order.paymentType ?? order.payment_type) || "UNKNOWN";
+        paymentBreakdown[payment] = (paymentBreakdown[payment] ?? 0) + 1;
+      }
+      const dailySales = [...dailyMap.values()].sort((a, b) => a.date.localeCompare(b.date)).slice(-14);
+      const productItems = await getList(endpoints.admin.products).catch(() => []);
+      const lowStockProducts = productItems.filter((p) => {
+        const available = n(p.availableStock ?? p.available_stock ?? p.stockQuantity ?? p.stock_quantity ?? p.stock);
+        const threshold = n(p.lowStockThreshold ?? p.low_stock_threshold, 5);
+        return available <= threshold;
+      }).length;
+
       return {
         ...base,
         totalRevenue: base.totalRevenue || ordersRevenue || onlineRevenue,
@@ -131,7 +160,12 @@ export const dashboardService = {
         deliveredOrdersCount: base.deliveredOrdersCount || delivered,
         totalAdminCommission: base.totalAdminCommission || 0,
         totalRestaurantPayable: base.totalRestaurantPayable || 0,
-      } as AdminDashboardResponse;
+        dailySales,
+        statusBreakdown,
+        paymentBreakdown,
+        lowStockProducts,
+        generatedAt: new Date().toISOString(),
+      } as AdminDashboardResponse & Record<string, any>;
     } catch (e) {
       console.debug("[dashboard] fallback aggregate failed", e);
       return base as AdminDashboardResponse;

@@ -119,24 +119,31 @@ function Dashboard() {
     staleTime: 60_000,
   });
 
-  const chartData =
-    recentOrders?.items
-      ?.slice(0, 7)
-      .map((o, i) => ({
-        name: `Order ${i + 1}`,
+  const chartData = Array.isArray((stats as any)?.dailySales) && (stats as any).dailySales.length
+    ? (stats as any).dailySales.map((row: any) => ({
+        name: new Date(row.date).toLocaleDateString(undefined, { day: "2-digit", month: "short" }),
+        revenue: Number(row.revenue ?? 0),
+        online: Number(row.online ?? 0),
+        cod: Number(row.cod ?? 0),
+        orders: Number(row.orders ?? 0),
+      }))
+    : (recentOrders?.items ?? []).slice(0, 7).reverse().map((o: any, i: number) => ({
+        name: new Date(o.createdAt || Date.now()).toLocaleDateString(undefined, { day: "2-digit", month: "short" }),
         revenue: Number(o.grandTotal ?? 0),
         orders: 1,
-      })) ?? [];
+      }));
 
   // Order analytics (status breakdown)
-  const statusCounts = (allOrders?.items ?? []).reduce((acc: Record<string, number>, o: any) => {
-    const s = (o.status || "UNKNOWN").toString();
-    acc[s] = (acc[s] || 0) + 1;
-    return acc;
-  }, {});
+  const statusCounts = Object.keys((stats as any)?.statusBreakdown ?? {}).length
+    ? ((stats as any).statusBreakdown as Record<string, number>)
+    : (allOrders?.items ?? []).reduce((acc: Record<string, number>, o: any) => {
+        const status = String(o.status || "UNKNOWN").toUpperCase();
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {});
   const pieData = [
     { name: "Completed", value: statusCounts["DELIVERED"] || 0, color: "#10B981" },
-    { name: "Pending", value: statusCounts["PENDING"] || 0, color: "#F59E0B" },
+    { name: "Pending", value: (statusCounts["PENDING"] || 0) + (statusCounts["RECEIVED"] || 0) + (statusCounts["PENDING_PAYMENT"] || 0), color: "#F59E0B" },
     { name: "Cancelled", value: statusCounts["CANCELLED"] || 0, color: "#EF4444" },
   ];
 
@@ -195,14 +202,21 @@ function Dashboard() {
               {greeting}, Admin
             </h2>
             <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-              Here is what's happening with your food delivery platform today.
+              Live business data from orders, outlets, payments, products and customers.
             </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-success/30 bg-success/10 px-2.5 py-1 text-success">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-success" /> Live backend
+              </span>
+              <span>Updated {new Date((stats as any)?.generatedAt ?? Date.now()).toLocaleTimeString()}</span>
+              {(stats as any)?.lowStockProducts > 0 && <span className="rounded-full border border-warning/30 bg-warning/10 px-2.5 py-1 text-warning">{(stats as any).lowStockProducts} low-stock products</span>}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={viewReport} className="inline-flex items-center gap-2 rounded-md gradient-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-glow">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            <button onClick={viewReport} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md gradient-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-glow sm:w-auto">
               <FileText className="h-4 w-4" /> View Report
             </button>
-            <button onClick={downloadReport} className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-4 py-2 text-sm hover:bg-accent">
+            <button onClick={downloadReport} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-border bg-background px-4 py-2 text-sm hover:bg-accent sm:w-auto">
               <Download className="h-4 w-4" /> Download
             </button>
           </div>
@@ -278,7 +292,7 @@ function Dashboard() {
         <div className="lg:col-span-2 rounded-xl border border-border bg-card p-5 shadow-card">
           <div className="mb-4">
             <h3 className="text-sm font-semibold">Revenue Analytics</h3>
-            <p className="text-xs text-muted-foreground">Recent orders</p>
+            <p className="text-xs text-muted-foreground">Last 14 days from backend order records</p>
           </div>
           {chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
@@ -293,13 +307,9 @@ function Dashboard() {
                 <XAxis dataKey="name" stroke="#6b7280" />
                 <YAxis stroke="#6b7280" />
                 <Tooltip />
-                <Area
-                  type="monotone"
-                  dataKey="revenue"
-                  stroke="#ff9100"
-                  fillOpacity={1}
-                  fill="url(#colorRevenue)"
-                />
+                <Area type="monotone" dataKey="revenue" stroke="#ff9100" fillOpacity={1} fill="url(#colorRevenue)" />
+                <Area type="monotone" dataKey="online" stroke="#8b5cf6" fillOpacity={0} />
+                <Area type="monotone" dataKey="cod" stroke="#10b981" fillOpacity={0} />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
