@@ -58,7 +58,7 @@ function asArray(data: any): any[] {
 }
 
 function parsePayload(raw: any): Record<string, any> {
-  const value = raw?.submittedPayload ?? raw?.submitted_payload ?? raw?.payload;
+  const value = raw?.submittedPayload ?? raw?.submitted_payload ?? raw?.payload ?? raw?.note;
   if (!value) return {};
   if (typeof value === "object") return value;
   try { return JSON.parse(String(value)); } catch { return {}; }
@@ -94,13 +94,15 @@ function normalizeRequest(raw: any, source: VerificationRequest["source"]): Veri
       source === "RIDER" ? "RIDER" : source === "RESTAURANT" ? "RESTAURANT" : "")
   ).toUpperCase();
 
-  const targetId = raw?.targetId ?? raw?.target_id;
+  const populatedUser = raw?.userId && typeof raw.userId === "object" ? raw.userId : undefined;
+  const populatedOutlet = raw?.outletId && typeof raw.outletId === "object" ? raw.outletId : undefined;
+  const targetId = raw?.targetId ?? raw?.target_id ?? populatedUser?.legacyId ?? populatedUser?._id ?? populatedOutlet?.legacyId ?? populatedOutlet?._id;
   const requestId = raw?.id ?? raw?.requestId ?? raw?.request_id;
   const docs = normalizeDocuments(raw);
 
-  const fullName = firstNonEmpty(raw?.fullName, raw?.applicantName, raw?.applicant_name, raw?.ownerName, raw?.owner_name, raw?.driverName, raw?.driver_name, raw?.riderName, raw?.rider_name, raw?.userName, raw?.user_name, payload.fullName, payload.name, payload.driverName, payload.riderName, payload.ownerName);
+  const fullName = firstNonEmpty(raw?.fullName, raw?.applicantName, raw?.applicant_name, raw?.ownerName, raw?.owner_name, raw?.driverName, raw?.driver_name, raw?.riderName, raw?.rider_name, raw?.userName, raw?.user_name, payload.fullName, payload.name, payload.applicantName, payload.driverName, payload.riderName, payload.ownerName, populatedUser?.name, populatedOutlet?.name);
   const businessName = firstNonEmpty(raw?.businessName, raw?.business_name, raw?.restaurantName, raw?.restaurant_name, payload.businessName, payload.restaurantName, payload.storeName);
-  const mobile = firstNonEmpty(raw?.contactMobile, raw?.contact_mobile, raw?.mobile, raw?.phone, raw?.userMobile, raw?.user_mobile, raw?.driverMobile, raw?.driver_mobile, payload.mobile, payload.phone, payload.phoneNumber, payload.contactMobile);
+  const mobile = firstNonEmpty(raw?.contactMobile, raw?.contact_mobile, raw?.mobile, raw?.phone, raw?.userMobile, raw?.user_mobile, raw?.driverMobile, raw?.driver_mobile, payload.mobile, payload.phone, payload.phoneNumber, payload.contactMobile, populatedUser?.phone);
   const address = firstNonEmpty(raw?.address, raw?.note, raw?.notes, payload.address, payload.fullAddress, payload.residentialAddress, payload.restaurantAddress, payload.businessAddress);
 
   return {
@@ -109,7 +111,7 @@ function normalizeRequest(raw: any, source: VerificationRequest["source"]): Veri
     entityType,
     requestType: raw?.requestType ?? raw?.request_type ?? entityType,
     restaurantId: raw?.restaurantId ?? raw?.restaurant_id ?? (entityType.includes("RESTAURANT") ? targetId : undefined),
-    riderId: raw?.riderId ?? raw?.rider_id ?? raw?.driverId ?? raw?.driver_id ?? raw?.profileId ?? raw?.profile_id ?? (entityType.includes("RIDER") || entityType.includes("DRIVER") ? targetId : undefined),
+    riderId: raw?.riderId ?? raw?.rider_id ?? raw?.driverId ?? raw?.driver_id ?? raw?.profileId ?? raw?.profile_id ?? (entityType.includes("RIDER") || entityType.includes("DRIVER") ? (populatedUser?.legacyId ?? populatedUser?._id ?? targetId) : undefined),
     applicantName: fullName ?? businessName ?? "Verification request",
     businessName,
     restaurantName: firstNonEmpty(raw?.restaurantName, raw?.restaurant_name, businessName),
