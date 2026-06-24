@@ -19,6 +19,10 @@ function verified(r: AdminDriverCashResponse) {
   return ["VERIFIED", "APPROVED", "ACTIVE"].includes(String(r.verificationStatus || "").toUpperCase()) || r.verified === true;
 }
 
+function riderRef(r: AdminDriverCashResponse): string | number {
+  return (r as any).driverId ?? (r as any).mongoId ?? (r as any).userId ?? (r as any).profileId ?? (r as any).id ?? "";
+}
+
 function RidersPage() {
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
@@ -50,8 +54,8 @@ function RidersPage() {
       <Summary title="COD awaiting admin" value={`₹${(data?.items || []).reduce((s,x)=>s+Number(x.cashInHand||0),0).toFixed(2)}`} icon={<Wallet className="h-5 w-5" />} />
       <Summary title="Rider payout due" value={`₹${(data?.items || []).reduce((s,x)=>s+Number(x.pendingPayout||0),0).toFixed(2)}`} icon={<IndianRupee className="h-5 w-5" />} />
     </div>
-    <ServerTable title={`${data?.total ?? 0} riders`} columns={cols} items={data?.items ?? []} page={page} totalPages={data?.total_pages ?? 1} total={data?.total ?? 0} isLoading={isLoading} isFetching={isFetching} error={error} onPageChange={setPage} search={search} onSearchChange={s => { setSearch(s); setPage(1); }} searchPlaceholder="Search rider name, phone or email" rowKey={r => r.driverId} />
-    {selected && <RiderControl rider={selected} onClose={() => setSelected(null)} onChanged={() => qc.invalidateQueries({ queryKey: driverKeys.all })} verify={(status) => verification.mutate({ id: selected.driverId, status })} />}
+    <ServerTable title={`${data?.total ?? 0} riders`} columns={cols} items={data?.items ?? []} page={page} totalPages={data?.total_pages ?? 1} total={data?.total ?? 0} isLoading={isLoading} isFetching={isFetching} error={error} onPageChange={setPage} search={search} onSearchChange={s => { setSearch(s); setPage(1); }} searchPlaceholder="Search rider name, phone or email" rowKey={r => riderRef(r)} />
+    {selected && <RiderControl rider={selected} onClose={() => setSelected(null)} onChanged={() => qc.invalidateQueries({ queryKey: driverKeys.all })} verify={(status) => verification.mutate({ id: riderRef(selected), status })} />}
   </>;
 }
 
@@ -59,15 +63,15 @@ function RiderControl({ rider, onClose, onChanged, verify }: { rider: AdminDrive
   const [detail,setDetail]=useState<AdminDriverCashResponse>(rider);
   const [loading,setLoading]=useState(true);
   const [preview,setPreview]=useState<{url:string;label:string}|null>(null);
-  useEffect(()=>{let mounted=true;setLoading(true);driversService.details(rider.driverId).then(x=>mounted&&setDetail(x)).catch(e=>toast.error(e.message)).finally(()=>mounted&&setLoading(false));return()=>{mounted=false};},[rider.driverId]);
+  useEffect(()=>{let mounted=true;setLoading(true);driversService.details(riderRef(rider)).then(x=>mounted&&setDetail(x)).catch(e=>toast.error(e.message)).finally(()=>mounted&&setLoading(false));return()=>{mounted=false};},[rider.driverId]);
 
   const cash = useMutation({
     mutationFn: async()=>{
       const max=Number(detail.cashInHand||0); const raw=window.prompt(`Confirm exact COD cash received from ${detail.driverName}`,max.toFixed(2)); if(raw===null) return null;
       const amount=Number(raw); if(!Number.isFinite(amount)||amount<=0) throw new Error("Enter a valid amount");
-      return driversService.verifyDeposit(detail.driverId,{amount,paymentMethod:"CASH",note:"Exact COD cash received and approved by admin"});
+      return driversService.verifyDeposit(riderRef(detail),{amount,paymentMethod:"CASH",note:"Exact COD cash received and approved by admin"});
     },
-    onSuccess: async x=>{if(!x)return;toast.success("Collected cash confirmed");setDetail(await driversService.details(detail.driverId));onChanged();},onError:(e:Error)=>toast.error(e.message)
+    onSuccess: async x=>{if(!x)return;toast.success("Collected cash confirmed");setDetail(await driversService.details(riderRef(detail)));onChanged();},onError:(e:Error)=>toast.error(e.message)
   });
   const payout=useMutation({
     mutationFn: async()=>{
@@ -75,11 +79,11 @@ function RiderControl({ rider, onClose, onChanged, verify }: { rider: AdminDrive
       const max=Number(detail.pendingPayout||0); const raw=window.prompt(`Pay rider to ${detail.upiId}`,max.toFixed(2)); if(raw===null)return null;
       const amount=Number(raw); if(!Number.isFinite(amount)||amount<=0)throw new Error("Enter a valid payout amount");
       const ref=window.prompt("Enter UPI transaction reference")||""; if(!ref.trim())throw new Error("UPI transaction reference is required");
-      return driversService.payout(detail.driverId,{amount,upiId:detail.upiId,paymentReference:ref,note:"Monthly rider payout"});
+      return driversService.payout(riderRef(detail),{amount,upiId:detail.upiId,paymentReference:ref,note:"Monthly rider payout"});
     },
-    onSuccess:async x=>{if(!x)return;toast.success("Rider payout recorded");setDetail(await driversService.details(detail.driverId));onChanged();},onError:(e:Error)=>toast.error(e.message)
+    onSuccess:async x=>{if(!x)return;toast.success("Rider payout recorded");setDetail(await driversService.details(riderRef(detail)));onChanged();},onError:(e:Error)=>toast.error(e.message)
   });
-  const remind=useMutation({mutationFn:()=>driversService.requestUpi(detail.driverId),onSuccess:()=>toast.success("UPI reminder sent to rider"),onError:(e:Error)=>toast.error(e.message)});
+  const remind=useMutation({mutationFn:()=>driversService.requestUpi(riderRef(detail)),onSuccess:()=>toast.success("UPI reminder sent to rider"),onError:(e:Error)=>toast.error(e.message)});
   const busy=cash.isPending||payout.isPending||remind.isPending;
   const orders=detail.orders||[];
 
