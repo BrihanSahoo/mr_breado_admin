@@ -18,6 +18,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { OutletCommandCenterPage } from "@/components/business-outlets/OutletCommandCenter";
 import { ApiKeysPage } from "@/components/business-settings/ApiKeysPage";
 import { PaymentControlsPage } from "@/components/business-settings/PaymentControlsPage";
+import { DeliveryPricingPage } from "@/components/business-settings/DeliveryPricingPage";
 import { useAuth } from "@/store/auth";
 
 const PUBLIC_ROUTES = ["/login", "/register"];
@@ -120,6 +121,7 @@ function RootComponent() {
   const outletDashboardMatch = pathname.match(/^\/business-outlets\/([^/?#]+)$/);
   const isApiKeysPage = pathname === "/api-keys";
   const isPaymentControlsPage = pathname === "/payment-controls";
+  const isDeliveryPricingPage = pathname === "/delivery-pricing";
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -135,6 +137,8 @@ function RootComponent() {
         <AdminLayout>
           {isApiKeysPage ? (
             <ApiKeysPage />
+          ) : isDeliveryPricingPage ? (
+            <DeliveryPricingPage />
           ) : isPaymentControlsPage ? (
             <PaymentControlsPage />
           ) : outletDashboardMatch?.[1] ? (

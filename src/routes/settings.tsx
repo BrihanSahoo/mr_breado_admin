@@ -24,15 +24,13 @@ export const Route = createFileRoute("/settings")({
   component: SettingsPage,
 });
 
-type Tab = "restaurant" | "driver" | "map" | "commission" | "platform" | "payment";
+type Tab = "restaurant" | "driver" | "commission" | "platform";
 
 const tabs: { key: Tab; label: string; icon: any; description?: string }[] = [
   { key: "restaurant", label: "Restaurant Settings", icon: Store },
-  { key: "driver", label: "Driver Settings", icon: Bike },
-  { key: "map", label: "Map Settings", icon: MapPin },
+  { key: "driver", label: "Rider Operations", icon: Bike },
   { key: "commission", label: "Admin Commission", icon: Percent },
   { key: "platform", label: "Platform Fee", icon: Grid2X2 },
-  { key: "payment", label: "Payment & Takeaway", icon: CreditCard },
 ];
 
 const platformDefaults = {
@@ -60,7 +58,7 @@ const platformDefaults = {
 };
 
 function SettingsPage() {
-  const [tab, setTab] = useState<Tab>("payment");
+  const [tab, setTab] = useState<Tab>("restaurant");
   return (
     <>
       <PageHeader title="Settings" icon={<SettingsIcon className="h-5 w-5" />} breadcrumbs={[{ label: "Dashboard", to: "/" }, { label: "Settings" }]} />
@@ -75,10 +73,8 @@ function SettingsPage() {
         <section className="min-w-0 rounded-xl border border-border bg-card p-4 shadow-card md:p-6">
           {tab === "restaurant" && <RestaurantSettings />}
           {tab === "driver" && <DriverSettings />}
-          {tab === "map" && <MapSettings />}
           {tab === "commission" && <CommissionSettings />}
           {tab === "platform" && <PlatformSettings />}
-          {tab === "payment" && <PaymentAndTakeawaySettings />}
         </section>
       </div>
     </>
@@ -105,7 +101,7 @@ function DriverSettings() {
   const save = useSave("driver", settingsService.updateDriver);
   const [form, setForm] = useState<any>({});
   useEffect(() => setForm(data ?? {}), [data]);
-  return <Panel title="Driver Settings"><Toggle label="Driver Document Verification" value={!!form.driverDocumentVerificationEnabled} onChange={(v)=>setForm({...form, driverDocumentVerificationEnabled:v})}/><div className="grid gap-3 md:grid-cols-2"><Field label="Driver Radius" value={form.driverRadiusKm ?? ""} onChange={(v)=>setForm({...form, driverRadiusKm:Number(v)})}/><Field label="Driver Location Update" value={form.driverLocationUpdateSeconds ?? ""} onChange={(v)=>setForm({...form, driverLocationUpdateSeconds:Number(v)})}/><Field label="Fare per KM" value={form.farePerKm ?? ""} onChange={(v)=>setForm({...form, farePerKm:Number(v)})}/><Field label="Fare MinCharge With KM" value={form.fareMinChargeWithKm ?? ""} onChange={(v)=>setForm({...form, fareMinChargeWithKm:Number(v)})}/><Field label="Fare Minimum Charge" value={form.fareMinimumCharge ?? ""} onChange={(v)=>setForm({...form, fareMinimumCharge:Number(v)})}/></div><Toggle label="Delivery Charges" value={!!form.deliveryChargeEnabled} onChange={(v)=>setForm({...form, deliveryChargeEnabled:v})}/><SaveButton loading={save.isPending} onClick={()=>save.mutate(form)} /></Panel>;
+  return <Panel title="Rider Operations"><div className="rounded-xl border border-border bg-background p-4 text-sm text-muted-foreground">Rider earning rates and assignment radius are managed from the dedicated <strong className="text-foreground">Delivery Pricing</strong> page. This section only controls operational verification and location refresh behavior.</div><Toggle label="Driver Document Verification" value={!!form.driverDocumentVerificationEnabled} onChange={(v)=>setForm({...form, driverDocumentVerificationEnabled:v})}/><div className="grid gap-3 md:grid-cols-2"><Field label="Driver Location Update (seconds)" value={form.driverLocationUpdateSeconds ?? ""} onChange={(v)=>setForm({...form, driverLocationUpdateSeconds:Number(v)})}/></div><SaveButton loading={save.isPending} onClick={()=>save.mutate({driverDocumentVerificationEnabled:!!form.driverDocumentVerificationEnabled,driverLocationUpdateSeconds:Number(form.driverLocationUpdateSeconds||15)})} /></Panel>;
 }
 function MapSettings() {
   const { data } = useSettingsQuery("map", settingsService.map);

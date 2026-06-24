@@ -4,7 +4,7 @@ import {
   LayoutDashboard, ShoppingBag, Users, Store, UserCog, Bike, Utensils, ChefHat,
   Soup, Layers, Shield, KeyRound, Tag, Gift, LifeBuoy, Ticket, CreditCard,
   MapPin, Wallet, Image as ImageIcon, Settings, LogOut, Bell, Search, Menu, ChevronDown,
-  ChevronRight, Globe, Activity, Building2, MessageSquare, UserCircle, ShieldCheck, Palette, Sparkles,
+  ChevronRight, Globe, Activity, Building2, MessageSquare, UserCircle, ShieldCheck, Palette, Sparkles, BadgeIndianRupee,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -73,6 +73,7 @@ const NAV: { section?: string; items: Item[] }[] = [
   ]},
   { section: "BUSINESS CONFIG", items: [
     { label: "API Keys", to: "/api-keys", icon: KeyRound },
+    { label: "Delivery Pricing", to: "/delivery-pricing", icon: BadgeIndianRupee },
     { label: "Payment Controls", to: "/payment-controls", icon: CreditCard },
     { label: "Settings", to: "/settings", icon: Settings },
   ]},
