@@ -5,6 +5,9 @@ import type {
   AdminDriverCashDepositRequest,
   AdminDriverCashResponse,
   PageResponse,
+  RiderFinanceHistoryRecord,
+  RiderPayoutRecord,
+  RiderSettlementRecord,
 } from "@/types";
 
 
@@ -35,6 +38,14 @@ function normalizeDriver(raw: any): AdminDriverCashResponse {
         alt: d?.alt ?? d?.name ?? d?.fileName ?? `Document ${i + 1}`,
       })) : [],
     } : null,
+    profileImage: source.profileImage ?? source.profile_image ?? source.passportPhoto?.url ?? source.passport_photo?.url ?? source.avatar?.url ?? "",
+    passportPhoto: source.passportPhoto ?? source.passport_photo ?? source.avatar ?? null,
+    settlements: Array.isArray(source.settlements) ? source.settlements : [],
+    payouts: Array.isArray(source.payouts) ? source.payouts : [],
+    financeHistory: Array.isArray(source.financeHistory ?? source.finance_history) ? (source.financeHistory ?? source.finance_history) : [],
+    pendingCashSettlementCount: Number(source.pendingCashSettlementCount ?? source.pending_cash_settlement_count ?? 0),
+    pendingCashSettlement: Number(source.pendingCashSettlement ?? source.pending_cash_settlement ?? 0),
+    payoutAwaitingConfirmation: Number(source.payoutAwaitingConfirmation ?? source.payout_awaiting_confirmation ?? 0),
   } as AdminDriverCashResponse;
 }
 export interface DriversQuery {
@@ -117,9 +128,25 @@ export const driversService = {
       data: body,
     }),
   payout: (driverId: number | string, body: { amount?: number; upiId?: string; paymentReference?: string; periodStart?: string; periodEnd?: string; note?: string }) =>
-    request<AdminDriverCashResponse>({ url: endpoints.admin.driverPayout(driverId), method: 'POST', data: body }),
+    request<RiderPayoutRecord>({ url: endpoints.admin.driverPayout(driverId), method: 'POST', data: body }),
   requestUpi: (driverId: number | string, message?: string) =>
     request<{ sent: boolean }>({ url: endpoints.admin.driverRequestUpi(driverId), method: 'POST', data: { message } }),
+  settlements: (params: { page?: number; perPage?: number; status?: string; method?: string; riderId?: string | number } = {}) =>
+    request<PageResponse<RiderSettlementRecord>>({
+      url: endpoints.admin.riderSettlements,
+      method: "GET",
+      params: { page: params.page ?? 1, perPage: params.perPage ?? 50, status: params.status, method: params.method, riderId: params.riderId },
+    }),
+  approveSettlement: (id: string | number, note?: string) =>
+    request<RiderSettlementRecord>({ url: endpoints.admin.approveRiderSettlement(id), method: "POST", data: { note } }),
+  rejectSettlement: (id: string | number, reason: string) =>
+    request<RiderSettlementRecord>({ url: endpoints.admin.rejectRiderSettlement(id), method: "POST", data: { reason } }),
+  markPayoutPaid: (id: string | number, body: { paymentReference: string; note?: string }) =>
+    request<RiderPayoutRecord>({ url: endpoints.admin.markRiderPayoutPaid(id), method: "POST", data: body }),
+  cancelPayout: (id: string | number, reason: string) =>
+    request<RiderPayoutRecord>({ url: endpoints.admin.cancelRiderPayout(id), method: "POST", data: { reason } }),
+  financeLedger: (riderId: string | number, limit = 200) =>
+    request<{ items: RiderFinanceHistoryRecord[] }>({ url: endpoints.admin.riderFinanceLedger, method: "GET", params: { riderId, limit } }),
   transactions: (driverId: number | string, page = 1, perPage = 20) =>
     request<PageResponse<unknown>>({
       url: endpoints.admin.driverCashTx(driverId),

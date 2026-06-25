@@ -236,9 +236,58 @@ export interface AdminUserResponse {
 }
 
 // Drivers cash
+export interface RiderSettlementRecord {
+  id: string;
+  riderId?: string;
+  riderName?: string;
+  riderPhone?: string;
+  amount: number;
+  method: "CASH" | "RAZORPAY" | string;
+  status: "PENDING" | "APPROVED" | "PAID" | "REJECTED" | "FAILED" | "CANCELLED" | string;
+  gatewayOrderId?: string;
+  gatewayPaymentId?: string;
+  paymentReference?: string;
+  note?: string;
+  adminNote?: string;
+  requestedAt?: string;
+  reviewedAt?: string;
+  paidAt?: string;
+  createdAt?: string;
+}
+
+export interface RiderPayoutRecord {
+  id: string;
+  amount: number;
+  status: string;
+  periodStart?: string;
+  periodEnd?: string;
+  upiId?: string;
+  paymentMethod?: string;
+  paymentReference?: string;
+  paidAt?: string;
+  createdAt?: string;
+  note?: string;
+}
+
+export interface RiderFinanceHistoryRecord {
+  id: string;
+  direction: "RIDER_TO_ADMIN" | "ADMIN_TO_RIDER" | string;
+  kind: string;
+  amount: number;
+  status: string;
+  method?: string;
+  paymentReference?: string;
+  title?: string;
+  note?: string;
+  createdAt?: string;
+  completedAt?: string;
+}
+
 export interface AdminDriverCashResponse {
-  profileId: number;
-  driverId: number;
+  profileId: number | string;
+  driverId: number | string;
+  mongoId?: string;
+  userId?: string;
   driverName: string;
   driverEmail?: string;
   driverMobile?: string;
@@ -253,15 +302,23 @@ export interface AdminDriverCashResponse {
   cashLimitBlocked?: number | boolean;
   totalCashCollected?: number;
   totalCashDeposited?: number;
+  pendingCashSettlement?: number;
+  pendingCashSettlementCount?: number;
+  availableCashToSettle?: number;
   totalDeliveries?: number;
   totalEarnings?: number;
   pendingPayout?: number;
   paidEarnings?: number;
+  payoutAwaitingConfirmation?: number;
   upiId?: string;
   payoutAccount?: Record<string, unknown>;
+  passportPhoto?: { url?: string; publicId?: string; alt?: string } | string | null;
+  profileImage?: string;
   latestLocation?: { latitude?: number; longitude?: number; recordedAt?: string } | null;
-  payouts?: Array<{ id: string; amount: number; status: string; periodStart?: string; periodEnd?: string; upiId?: string; paymentReference?: string; paidAt?: string; note?: string }>;
-  orders?: Array<{ id?: number; orderNumber?: string; status?: string; total?: number; paymentMethod?: string; paymentStatus?: string; distanceKm?: number; outletName?: string; customerName?: string; deliveredAt?: string; createdAt?: string }>;
+  payouts?: RiderPayoutRecord[];
+  settlements?: RiderSettlementRecord[];
+  financeHistory?: RiderFinanceHistoryRecord[];
+  orders?: Array<{ id?: number | string; orderNumber?: string; status?: string; total?: number; paymentMethod?: string; paymentStatus?: string; distanceKm?: number; outletName?: string; customerName?: string; deliveredAt?: string; createdAt?: string }>;
   verificationRequest?: { id?: string; status?: string; documents?: Array<{ url?: string; downloadUrl?: string; publicId?: string; alt?: string }>; note?: string; createdAt?: string } | null;
   rating?: number;
 }

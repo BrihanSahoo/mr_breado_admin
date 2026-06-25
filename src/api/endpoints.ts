@@ -116,6 +116,12 @@ export const endpoints = {
     driverCashTx: (driverId: number | string) => `/admin/drivers/${driverId}/cash-transactions`,
     driverPayout: (driverId: number | string) => `/admin/drivers/${driverId}/payout`,
     driverRequestUpi: (driverId: number | string) => `/admin/drivers/${driverId}/request-upi`,
+    riderSettlements: "/admin/rider-settlements",
+    approveRiderSettlement: (id: number | string) => `/admin/rider-settlements/${id}/approve`,
+    rejectRiderSettlement: (id: number | string) => `/admin/rider-settlements/${id}/reject`,
+    markRiderPayoutPaid: (id: number | string) => `/admin/rider-payouts/${id}/mark-paid`,
+    cancelRiderPayout: (id: number | string) => `/admin/rider-payouts/${id}/cancel`,
+    riderFinanceLedger: "/admin/rider-finance-ledger",
 
     products: "/admin/products",
     foodRequests: "/admin/food-requests",
