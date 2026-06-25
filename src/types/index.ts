@@ -331,7 +331,7 @@ export interface AdminDriverCashDepositRequest {
 
 // Banners
 export interface BannerResponse {
-  id: number;
+  id: number | string;
   title: string;
   subtitle?: string;
   description?: string;
@@ -339,10 +339,17 @@ export interface BannerResponse {
   position?: string;
   offerType?: string;
   actionType?: string;
-  actionValue?: number;
+  actionValue?: number | string;
   discountType?: string;
   discountValue?: number;
-  couponCode?: string | boolean;
+  couponCode?: string;
+  coupon?: Coupon | null;
+  appliesToAllOutlets?: boolean;
+  outletIds?: Array<string | number>;
+  outletNames?: string[];
+  scopeText?: string;
+  expired?: boolean;
+  status?: string;
   enabled?: boolean;
   active?: boolean;
   priority?: string | number;
@@ -359,10 +366,13 @@ export interface BannerRequest {
   position?: string;
   offerType?: string;
   actionType?: string;
-  actionValue?: number;
+  actionValue?: number | string;
   discountType?: string;
   discountValue?: number;
   couponCode?: string;
+  appliesToAllOutlets?: boolean;
+  outletIds?: Array<string | number>;
+  imageFile?: File | null;
   enabled?: boolean;
   priority?: string | number;
   startsAt?: string;
@@ -398,7 +408,7 @@ export type OfferRequest = Partial<OfferResponse>;
 
 // Coupons
 export interface Coupon {
-  id: number;
+  id: number | string;
   code: string;
   title?: string;
   description?: string;
@@ -412,6 +422,14 @@ export interface Coupon {
   startsAt?: string;
   expiresAt?: string;
   enabled?: boolean;
+  active?: boolean;
+  expired?: boolean;
+  status?: string;
+  freeDelivery?: boolean;
+  discountText?: string;
+  appliesToAllOutlets?: boolean;
+  outletIds?: Array<string | number>;
+  outletNames?: string[];
   deleted?: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -431,6 +449,53 @@ export interface AdminCouponRequest {
   enabled?: boolean;
   appliesToAllOutlets?: boolean;
   outletIds?: Array<string | number>;
+  productIds?: Array<string | number>;
+  paymentMethods?: string[];
+  fulfilmentTypes?: string[];
+  freeDelivery?: boolean;
+}
+
+export interface CouponUsageRecord {
+  id: string;
+  couponId?: string;
+  couponCode: string;
+  couponTitle?: string;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  outletName?: string;
+  orderNumber?: string;
+  discountAmount?: number;
+  status?: string;
+  createdAt?: string;
+  customer?: { id?: string | number; name?: string; email?: string; phone?: string } | null;
+  outlet?: { id?: string | number; name?: string; code?: string; slug?: string } | null;
+  order?: { id?: string | number; orderNumber?: string; status?: string; total?: number; subtotal?: number; discount?: number; deliveryCharge?: number; paymentMethod?: string; paymentStatus?: string; fulfilmentType?: string; createdAt?: string; deliveredAt?: string; items?: unknown[] } | null;
+}
+
+export interface CouponUsageSummary {
+  reservedCount: number;
+  consumedCount: number;
+  releasedCount: number;
+  consumedDiscount: number;
+  totalDiscount: number;
+}
+
+export interface RiderFinanceSummary {
+  totalRiders?: number;
+  activeRiders?: number;
+  onlineRiders?: number;
+  totalCodCollected?: number;
+  totalReceivedFromRiders?: number;
+  totalHeldByRiders?: number;
+  totalCodHeldByRiders?: number;
+  riders?: { total?: number; active?: number; online?: number };
+  pendingCashSettlementAmount?: number;
+  pendingCashSettlementCount?: number;
+  totalPaidToRiders?: number;
+  totalPendingRiderPayout?: number;
+  payoutAwaitingConfirmation?: number;
+  totalRiderEarnings?: number;
 }
 
 // Payments

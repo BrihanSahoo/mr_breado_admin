@@ -4,7 +4,7 @@ import {
   LayoutDashboard, ShoppingBag, Users, Store, UserCog, Bike, Utensils, ChefHat,
   Soup, Layers, Shield, KeyRound, Tag, Gift, LifeBuoy, Ticket, CreditCard,
   MapPin, Wallet, Image as ImageIcon, Settings, LogOut, Bell, Search, Menu, ChevronDown,
-  ChevronRight, Globe, Activity, Building2, MessageSquare, UserCircle, ShieldCheck, Palette, Sparkles, BadgeIndianRupee,
+  ChevronRight, Globe, Activity, Building2, MessageSquare, UserCircle, ShieldCheck, Palette, Sparkles, BadgeIndianRupee, TicketCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -50,7 +50,9 @@ const NAV: { section?: string; items: Item[] }[] = [
   ]},
   { section: "OFFER MANAGEMENT", items: [
     { label: "Coupons", to: "/coupons", icon: Tag },
-    { label: "Offers & Banners", to: "/offers", icon: Gift },
+    { label: "Coupon Usage", to: "/coupon-usage", icon: TicketCheck },
+    { label: "Banners", to: "/banners", icon: ImageIcon },
+    { label: "Offers", to: "/offers", icon: Gift },
   ]},
   { section: "SUPPORT MANAGEMENT", items: [
     { label: "Support Dashboard", to: "/support", icon: LifeBuoy },

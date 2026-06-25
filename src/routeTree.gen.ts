@@ -36,6 +36,7 @@ import { Route as CustomersRouteImport } from './routes/customers'
 import { Route as CustomerMessagesRouteImport } from './routes/customer-messages'
 import { Route as CuisineRouteImport } from './routes/cuisine'
 import { Route as CouponsRouteImport } from './routes/coupons'
+import { Route as CouponUsageRouteImport } from './routes/coupon-usage'
 import { Route as CategoriesRouteImport } from './routes/categories'
 import { Route as BusinessOutletsRouteImport } from './routes/business-outlets'
 import { Route as BrandsRouteImport } from './routes/brands'
@@ -189,6 +190,11 @@ const CouponsRoute = CouponsRouteImport.update({
   path: '/coupons',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CouponUsageRoute = CouponUsageRouteImport.update({
+  id: '/coupon-usage',
+  path: '/coupon-usage',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CategoriesRoute = CategoriesRouteImport.update({
   id: '/categories',
   path: '/categories',
@@ -278,6 +284,7 @@ export interface FileRoutesByFullPath {
   '/brands': typeof BrandsRoute
   '/business-outlets': typeof BusinessOutletsRouteWithChildren
   '/categories': typeof CategoriesRoute
+  '/coupon-usage': typeof CouponUsageRoute
   '/coupons': typeof CouponsRoute
   '/cuisine': typeof CuisineRoute
   '/customer-messages': typeof CustomerMessagesRoute
@@ -323,6 +330,7 @@ export interface FileRoutesByTo {
   '/brands': typeof BrandsRoute
   '/business-outlets': typeof BusinessOutletsRouteWithChildren
   '/categories': typeof CategoriesRoute
+  '/coupon-usage': typeof CouponUsageRoute
   '/coupons': typeof CouponsRoute
   '/cuisine': typeof CuisineRoute
   '/customer-messages': typeof CustomerMessagesRoute
@@ -369,6 +377,7 @@ export interface FileRoutesById {
   '/brands': typeof BrandsRoute
   '/business-outlets': typeof BusinessOutletsRouteWithChildren
   '/categories': typeof CategoriesRoute
+  '/coupon-usage': typeof CouponUsageRoute
   '/coupons': typeof CouponsRoute
   '/cuisine': typeof CuisineRoute
   '/customer-messages': typeof CustomerMessagesRoute
@@ -416,6 +425,7 @@ export interface FileRouteTypes {
     | '/brands'
     | '/business-outlets'
     | '/categories'
+    | '/coupon-usage'
     | '/coupons'
     | '/cuisine'
     | '/customer-messages'
@@ -461,6 +471,7 @@ export interface FileRouteTypes {
     | '/brands'
     | '/business-outlets'
     | '/categories'
+    | '/coupon-usage'
     | '/coupons'
     | '/cuisine'
     | '/customer-messages'
@@ -506,6 +517,7 @@ export interface FileRouteTypes {
     | '/brands'
     | '/business-outlets'
     | '/categories'
+    | '/coupon-usage'
     | '/coupons'
     | '/cuisine'
     | '/customer-messages'
@@ -552,6 +564,7 @@ export interface RootRouteChildren {
   BrandsRoute: typeof BrandsRoute
   BusinessOutletsRoute: typeof BusinessOutletsRouteWithChildren
   CategoriesRoute: typeof CategoriesRoute
+  CouponUsageRoute: typeof CouponUsageRoute
   CouponsRoute: typeof CouponsRoute
   CuisineRoute: typeof CuisineRoute
   CustomerMessagesRoute: typeof CustomerMessagesRoute
@@ -780,6 +793,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CouponsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/coupon-usage': {
+      id: '/coupon-usage'
+      path: '/coupon-usage'
+      fullPath: '/coupon-usage'
+      preLoaderRoute: typeof CouponUsageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/categories': {
       id: '/categories'
       path: '/categories'
@@ -915,6 +935,7 @@ const rootRouteChildren: RootRouteChildren = {
   BrandsRoute: BrandsRoute,
   BusinessOutletsRoute: BusinessOutletsRouteWithChildren,
   CategoriesRoute: CategoriesRoute,
+  CouponUsageRoute: CouponUsageRoute,
   CouponsRoute: CouponsRoute,
   CuisineRoute: CuisineRoute,
   CustomerMessagesRoute: CustomerMessagesRoute,

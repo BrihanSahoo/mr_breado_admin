@@ -8,6 +8,7 @@ import type {
   RiderFinanceHistoryRecord,
   RiderPayoutRecord,
   RiderSettlementRecord,
+  RiderFinanceSummary,
 } from "@/types";
 
 
@@ -84,6 +85,7 @@ function normalizeDriverPage(payload: any, params: DriversQuery): PageResponse<A
 }
 
 export const driversService = {
+  financeSummary: () => request<RiderFinanceSummary>({ url: endpoints.admin.riderFinanceSummary, method: "GET" }),
   list: async (params: DriversQuery = {}) => {
     const query = { page: params.page ?? 1, perPage: params.perPage ?? 20, search: params.search || undefined, _t: Date.now() };
     const urls = [endpoints.admin.drivers, "/admin/delivery-boys", "/delivery-boys", "/admin/riders"];

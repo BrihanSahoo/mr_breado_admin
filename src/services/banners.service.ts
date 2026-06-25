@@ -7,6 +7,18 @@ export interface BannersQuery {
   perPage?: number;
 }
 
+function payload(body: BannerRequest): BannerRequest | FormData {
+  if (!body.imageFile) return body;
+  const form = new FormData();
+  Object.entries(body).forEach(([key, value]) => {
+    if (key === "imageFile" || value === undefined || value === null) return;
+    if (Array.isArray(value)) form.append(key, JSON.stringify(value));
+    else form.append(key, String(value));
+  });
+  form.append("imageFile", body.imageFile);
+  return form;
+}
+
 export const bannersService = {
   list: (params: BannersQuery = {}) =>
     request<PageResponse<BannerResponse>>({
@@ -18,13 +30,13 @@ export const bannersService = {
     request<BannerResponse>({
       url: endpoints.admin.banners,
       method: "POST",
-      data: body,
+      data: payload(body),
     }),
   update: (id: number | string, body: BannerRequest) =>
     request<BannerResponse>({
       url: endpoints.admin.bannerById(id),
       method: "PUT",
-      data: body,
+      data: payload(body),
     }),
   remove: (id: number | string) =>
     request<void>({

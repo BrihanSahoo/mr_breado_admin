@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   ArrowDownLeft,
@@ -59,6 +59,7 @@ function RidersPage() {
   const [selected, setSelected] = useState<AdminDriverCashResponse | null>(null);
   const { search, setSearch, debounced } = useTableSearch();
   const { data, isLoading, isFetching, error } = useDrivers({ page, perPage: 20, search: debounced });
+  const financeSummary = useQuery({ queryKey: ["rider-finance-summary"], queryFn: driversService.financeSummary, staleTime: 10_000 });
 
   const verification = useMutation({
     mutationFn: ({ id, status }: { id: number | string; status: "VERIFIED" | "UNVERIFIED" | "REJECTED" }) =>
@@ -104,11 +105,13 @@ function RidersPage() {
 
   return <>
     <PageHeader title="Rider Finance & Control" icon={<Bike className="h-5 w-5" />} breadcrumbs={[{ label: "Dashboard", to: "/" }, { label: "Delivery Management" }, { label: "Rider Control" }]} />
-    <div className="mb-5 grid gap-4 md:grid-cols-4">
-      <Summary title="Active riders" value={String(rows.filter((x) => x.online && x.available).length)} icon={<Bike className="h-5 w-5" />} />
-      <Summary title="COD held by riders" value={`₹${rows.reduce((s, x) => s + Number(x.cashInHand || 0), 0).toFixed(2)}`} icon={<Wallet className="h-5 w-5" />} />
-      <Summary title="Cash requests" value={String(rows.reduce((s, x) => s + Number(x.pendingCashSettlementCount || 0), 0))} icon={<ArrowDownLeft className="h-5 w-5 text-emerald-600" />} />
-      <Summary title="Rider payout due" value={`₹${rows.reduce((s, x) => s + Number(x.pendingPayout || 0), 0).toFixed(2)}`} icon={<ArrowUpRight className="h-5 w-5 text-red-600" />} />
+    <div className="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+      <Summary title="Online riders" value={String(financeSummary.data?.onlineRiders ?? financeSummary.data?.riders?.online ?? rows.filter((x) => x.online && x.available).length)} icon={<Bike className="h-5 w-5" />} />
+      <Summary title="Total COD collected" value={`₹${Number(financeSummary.data?.totalCodCollected || 0).toFixed(2)}`} icon={<Wallet className="h-5 w-5" />} />
+      <Summary title="Received from riders" value={`₹${Number(financeSummary.data?.totalReceivedFromRiders || 0).toFixed(2)}`} icon={<ArrowDownLeft className="h-5 w-5 text-emerald-600" />} />
+      <Summary title="COD held by riders" value={`₹${Number(financeSummary.data?.totalCodHeldByRiders ?? financeSummary.data?.totalHeldByRiders ?? 0).toFixed(2)}`} icon={<Wallet className="h-5 w-5 text-amber-600" />} />
+      <Summary title="Paid to riders" value={`₹${Number(financeSummary.data?.totalPaidToRiders || 0).toFixed(2)}`} icon={<ArrowUpRight className="h-5 w-5 text-red-600" />} />
+      <Summary title="Rider payout due" value={`₹${Number(financeSummary.data?.totalPendingRiderPayout || 0).toFixed(2)}`} icon={<IndianRupee className="h-5 w-5 text-primary" />} />
     </div>
     <ServerTable
       title={`${data?.total ?? 0} riders`}
@@ -129,7 +132,7 @@ function RidersPage() {
     {selected && <RiderControl
       rider={selected}
       onClose={() => setSelected(null)}
-      onChanged={() => qc.invalidateQueries({ queryKey: driverKeys.all })}
+      onChanged={() => { qc.invalidateQueries({ queryKey: driverKeys.all }); qc.invalidateQueries({ queryKey: ["rider-finance-summary"] }); }}
       verify={(status) => verification.mutate({ id: riderRef(selected), status })}
     />}
   </>;

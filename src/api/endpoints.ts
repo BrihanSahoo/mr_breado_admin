@@ -122,6 +122,7 @@ export const endpoints = {
     markRiderPayoutPaid: (id: number | string) => `/admin/rider-payouts/${id}/mark-paid`,
     cancelRiderPayout: (id: number | string) => `/admin/rider-payouts/${id}/cancel`,
     riderFinanceLedger: "/admin/rider-finance-ledger",
+    riderFinanceSummary: "/admin/riders/finance-summary",
 
     products: "/admin/products",
     foodRequests: "/admin/food-requests",
@@ -160,6 +161,8 @@ export const endpoints = {
     coupons: "/admin/coupons",
     couponById: (id: number | string) => `/admin/coupons/${id}`,
     couponStatus: (id: number | string) => `/admin/coupons/${id}/status`,
+    couponUsages: "/admin/coupon-usages",
+    couponUsageByCoupon: (id: number | string) => `/admin/coupons/${id}/usages`,
 
     paymentsSummary: "/admin/payments/summary",
     paymentLedger: "/admin/payment-ledger",
