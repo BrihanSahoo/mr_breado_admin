@@ -6,6 +6,14 @@ export type SafeApiError = Error & {
 };
 
 const CODE_MESSAGES: Record<string, string> = {
+  INVALID_CUISINE: "Select an active cuisine.",
+  INVALID_CATEGORY: "Select an active Admin-created category.",
+  INVALID_BRAND: "Select an active Admin-created brand.",
+  PRODUCT_NAME_REQUIRED: "Enter the food title.",
+  PRODUCT_NAME_TOO_LONG: "Food title must be 140 characters or fewer.",
+  PRODUCT_IMAGE_REQUIRED: "Select a food image from your device.",
+  INVALID_PRODUCT_PRICE: "Enter a valid food price greater than zero.",
+  INVALID_OFFER_PRICE: "Offer price must be lower than the base price.",
   CUISINE_ALREADY_EXISTS: "A cuisine with this name already exists.",
   DUPLICATE_RECORD: "A cuisine with this name already exists.",
   CUISINE_IN_USE: "This cuisine is assigned to foods. Deactivate it instead of deleting it.",

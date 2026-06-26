@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { useProducts } from "@/hooks/queries/use-products";
 import { productsService } from "@/services/products.service";
+import { apiErrorMessage } from "@/lib/api-error";
 import {
   useDeleteProduct,
   useToggleProductAvailability,
@@ -237,6 +238,7 @@ export function FoodsPage({ title, source = "admin" }: { title: string; source?:
         form={form}
         setForm={setForm}
         editing={editing}
+        saving={create.isPending || update.isPending}
         categories={categoriesQuery.data ?? []}
         brands={brandsQuery.data ?? []}
         cuisines={cuisinesQuery.data ?? []}
@@ -294,7 +296,8 @@ export function FoodsPage({ title, source = "admin" }: { title: string; source?:
             setShowForm(false);
             setEditing(null);
           } catch (e) {
-            console.error(e); toast.error((e as any)?.response?.data?.message || (e as any)?.message || "Food could not be saved");
+            console.error(e);
+            toast.error(apiErrorMessage(e, "Food could not be saved. Please try again."));
           }
         }}
       />
@@ -303,15 +306,15 @@ export function FoodsPage({ title, source = "admin" }: { title: string; source?:
 }
 
 // Simple modal form (kept inline to keep changes minimal)
-function ModalForm({ open, onClose, form, setForm, onSave, editing, categories = [], brands = [], cuisines = [] }: any) {
+function ModalForm({ open, onClose, form, setForm, onSave, editing, saving = false, categories = [], brands = [], cuisines = [] }: any) {
   if (!open) return null;
   const set = (key: string, value: any) => setForm((s:any) => ({ ...s, [key]: value }));
   const categoryText = String(form.categoryName || "").toLowerCase();
   const isPizza = categoryText.includes("pizza");
   const isCake = categoryText.includes("cake");
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/55 p-3 pt-[max(12px,env(safe-area-inset-top))] sm:items-center sm:p-4">
-      <div className="my-auto max-h-[calc(100dvh-24px)] w-full max-w-4xl overflow-y-auto rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
+    <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+      <div className="max-h-[92dvh] w-full overflow-y-auto rounded-t-3xl border border-border/80 bg-card p-4 shadow-2xl sm:my-auto sm:max-h-[calc(100dvh-32px)] sm:max-w-4xl sm:rounded-3xl sm:p-6">
         <h3 className="mb-4 text-lg font-semibold">{editing ? "Edit Food" : "Add Item"}</h3>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           <Field label="Title" value={form.title} onChange={(v:any)=>set("title", v)} />
@@ -334,7 +337,7 @@ function ModalForm({ open, onClose, form, setForm, onSave, editing, categories =
             <Field label="2kg Price (₹)" type="number" value={form.cake2kgExtra} onChange={(v:any)=>set("cake2kgExtra", v)} />
             <Field label="Cake Message Charge (₹)" type="number" value={form.cakeMessageCharge} onChange={(v:any)=>set("cakeMessageCharge", v)} />
           </>}
-          <label className="block text-sm font-medium">Image<input type="file" accept="image/*" onChange={(e:any) => set("image", e.target.files?.[0] ?? null)} className="mt-1 w-full rounded-md border border-input px-3 py-2" /></label>
+          <label className="block text-sm font-medium">Food image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif" onChange={(e:any) => { const file=e.target.files?.[0] ?? null; if(file && file.size > 8*1024*1024){ toast.error("Choose an image smaller than 8 MB."); e.target.value=""; return; } set("image", file); }} className="mt-1 min-h-11 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm" /><span className="mt-1 block text-xs text-muted-foreground">JPG, PNG, WebP, GIF, AVIF or HEIC · maximum 8 MB</span></label>
         </div>
         {(isPizza || isCake) && <div className="mt-3 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm"><strong>{isPizza ? "Pizza size pricing" : "Cake weight pricing"}</strong><div className="mt-1 text-muted-foreground">{isPizza ? "Customer sees Small, Medium and Large. Small is selected by default." : "Customer sees 500gm, 1kg, 1.5kg and 2kg. 500gm is selected by default."}</div></div>}
         <label className="mt-3 block text-sm font-medium">Description<textarea value={form.description} onChange={(e)=>set("description", e.target.value)} className="mt-1 min-h-24 w-full rounded-md border border-input px-3 py-2" /></label>
@@ -346,8 +349,8 @@ function ModalForm({ open, onClose, form, setForm, onSave, editing, categories =
           {isCake && <Toggle label="Custom Weight" value={form.customWeightEnabled} onChange={(v:any)=>set("customWeightEnabled", v)} />}
         </div>
         <div className="mt-5 flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-md border border-border px-4 py-2 text-sm hover:bg-accent">Cancel</button>
-          <button onClick={onSave} className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Save</button>
+          <button disabled={saving} onClick={onClose} className="min-h-11 rounded-xl border border-border px-5 py-2.5 text-sm font-semibold transition hover:bg-accent disabled:opacity-50">Cancel</button>
+          <button disabled={saving} onClick={onSave} className="inline-flex min-h-11 min-w-28 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-lg transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60">{saving ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving…</> : "Save Food"}</button>
         </div>
       </div>
     </div>
