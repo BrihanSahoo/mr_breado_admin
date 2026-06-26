@@ -11,26 +11,32 @@ interface Props {
 
 export function PageHeader({ title, breadcrumbs = [], icon, actions }: Props) {
   return (
-    <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex items-center gap-3">
+    <header className="mb-5 flex flex-col gap-4 rounded-2xl border border-border/70 bg-card/55 p-4 shadow-card backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:p-5">
+      <div className="flex min-w-0 items-center gap-3">
         {icon && (
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">{icon}</div>
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10 text-primary shadow-sm">
+            {icon}
+          </div>
         )}
-        <div>
-          <h1 className="text-lg font-semibold leading-tight">{title}</h1>
+        <div className="min-w-0">
+          <h1 className="truncate text-xl font-bold leading-tight tracking-tight sm:text-2xl">{title}</h1>
           {breadcrumbs.length > 0 && (
-            <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-              {breadcrumbs.map((b, i) => (
-                <span key={i} className="flex items-center gap-1">
-                  {b.to ? <Link to={b.to} className="hover:text-foreground">{b.label}</Link> : <span>{b.label}</span>}
-                  {i < breadcrumbs.length - 1 && <ChevronRight className="h-3 w-3" />}
+            <nav className="mt-1 flex min-w-0 items-center gap-1 overflow-hidden text-xs text-muted-foreground" aria-label="Breadcrumb">
+              {breadcrumbs.map((breadcrumb, index) => (
+                <span key={`${breadcrumb.label}-${index}`} className="flex min-w-0 items-center gap-1">
+                  {index > 0 && <ChevronRight className="h-3 w-3 shrink-0" />}
+                  {breadcrumb.to ? (
+                    <Link to={breadcrumb.to} className="truncate transition hover:text-primary">{breadcrumb.label}</Link>
+                  ) : (
+                    <span className="truncate">{breadcrumb.label}</span>
+                  )}
                 </span>
               ))}
-            </div>
+            </nav>
           )}
         </div>
       </div>
-      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
-    </div>
+      {actions && <div className="w-full shrink-0 sm:w-auto">{actions}</div>}
+    </header>
   );
 }

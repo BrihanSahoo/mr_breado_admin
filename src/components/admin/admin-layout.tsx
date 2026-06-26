@@ -167,16 +167,31 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 function ThemeSwitcher() {
-  const [theme, setTheme] = useState(() => localStorage.getItem("admin-theme") || "luxury");
+  const [theme, setTheme] = useState("luxury");
+  const [hydrated, setHydrated] = useState(false);
+
   useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem("admin-theme");
+      if (stored === "dark" || stored === "light" || stored === "luxury") setTheme(stored);
+    } catch {
+      // Storage can be disabled in private mobile browsers.
+    } finally {
+      setHydrated(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
     document.documentElement.classList.remove("theme-dark", "theme-light", "theme-luxury");
     document.documentElement.classList.add(`theme-${theme}`);
-    localStorage.setItem("admin-theme", theme);
-  }, [theme]);
+    try { window.localStorage.setItem("admin-theme", theme); } catch { /* optional */ }
+  }, [hydrated, theme]);
 
   return (
     <select
       value={theme}
+      disabled={!hydrated}
       onChange={(e) => setTheme(e.target.value)}
       className="rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold outline-none hover:bg-accent"
       title="Theme"
@@ -213,23 +228,24 @@ export function AdminLayout({ children }: { children: ReactNode }) {
     const onPress = (event: Event) => {
       const target = event.target as HTMLElement | null;
       if (!target?.closest('button, a, [role=button]')) return;
-      if ('vibrate' in navigator && window.matchMedia('(pointer: coarse)').matches) navigator.vibrate?.(12);
+      if (typeof navigator !== 'undefined' && typeof window !== 'undefined' && 'vibrate' in navigator && window.matchMedia('(pointer: coarse)').matches) navigator.vibrate?.(12);
     };
+    if (typeof document === 'undefined') return;
     document.addEventListener('click', onPress, { passive: true });
     return () => document.removeEventListener('click', onPress);
   }, []);
   return (
-    <div className="flex min-h-[100dvh] w-full overflow-hidden bg-background text-foreground">
+    <div className="flex h-[100dvh] min-h-[100dvh] w-full overflow-hidden bg-background text-foreground">
       <aside className="hidden w-[285px] shrink-0 border-r border-sidebar-border bg-sidebar shadow-card lg:block">
         <SidebarContent />
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex min-h-[64px] shrink-0 items-center gap-2 border-b border-border bg-card/50 px-2 backdrop-blur-xl sm:min-h-[72px] sm:gap-3 sm:px-4">
+        <header className="sticky top-0 z-40 flex min-h-[64px] shrink-0 items-center gap-2 border-b border-border bg-card/85 px-2 pb-2 pt-[max(.5rem,env(safe-area-inset-top))] shadow-sm backdrop-blur-xl sm:min-h-[72px] sm:gap-3 sm:px-4 sm:py-2">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
-              <button className="rounded-md p-2 hover:bg-accent lg:hidden"><Menu className="h-5 w-5" /></button>
+              <button aria-label="Open navigation" className="flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-background/80 transition hover:bg-accent lg:hidden"><Menu className="h-5 w-5" /></button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-72 border-sidebar-border bg-sidebar p-0">
+            <SheetContent side="left" className="w-[min(88vw,320px)] border-sidebar-border bg-sidebar p-0">
               <SidebarContent onNavigate={() => setMobileOpen(false)} />
             </SheetContent>
           </Sheet>
@@ -254,8 +270,8 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           </div>
           <div className="hidden md:block"><LogoutButton compact /></div>
         </header>
-        <main className="min-w-0 flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-[1680px] p-3 sm:p-4 md:p-7">
+        <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain">
+          <div className="mx-auto w-full max-w-[1680px] px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 sm:p-4 md:p-7">
             {children}
           </div>
         </main>

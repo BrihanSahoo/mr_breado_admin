@@ -97,7 +97,8 @@ function isAuthenticationRequest(url: unknown): boolean {
 }
 
 /** Map HTTP status to a user-safe message. Backend payloads are never rendered. */
-function safeMessageFor(status: number | undefined, authRequest = false): string {
+function safeMessageFor(status: number | undefined, authRequest = false, networkError = false): string {
+  if (networkError) return "Unable to reach the server. Check your connection and try again.";
   if (status === 400) return authRequest ? "Please enter a valid admin email and password." : "The request was invalid. Please check your input.";
   if (status === 401) return authRequest ? "Invalid admin email or password." : "Your session has expired. Please sign in again.";
   if (status === 403) return "You don't have permission to perform this action.";
@@ -127,7 +128,8 @@ api.interceptors.response.use(
   (error: AxiosError<ApiResponse<unknown>>) => {
     const status = error.response?.status;
     const authRequest = isAuthenticationRequest(error.config?.url);
-    const safeMessage = safeMessageFor(status, authRequest);
+    const networkError = !error.response && (error.code === "ERR_NETWORK" || error.code === "ECONNABORTED" || error.message === "Network Error");
+    const safeMessage = safeMessageFor(status, authRequest, networkError);
 
     // A failed login is not an expired session. Do not clear/redirect or show the
     // misleading session-expired message for authentication endpoints.
@@ -145,7 +147,7 @@ api.interceptors.response.use(
     }
     const backendMessage = String((error.response?.data as any)?.message ?? (error.response?.data as any)?.error ?? "").trim();
     const code = String((error.response?.data as any)?.code ?? "").trim();
-    return Promise.reject(Object.assign(new Error(backendMessage || safeMessage), {
+    return Promise.reject(Object.assign(new Error(safeMessage), {
       status,
       code,
       backendMessage,
