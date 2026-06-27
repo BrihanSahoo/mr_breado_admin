@@ -220,7 +220,8 @@ export interface AdminRestaurantResponse {
 // Users
 export type UserRole = "USER" | "SELLER" | "DRIVER" | "ADMIN";
 export interface AdminUserResponse {
-  id: number;
+  id: number | string;
+  mongoId?: string;
   name: string;
   email?: string;
   mobile?: string;
@@ -228,10 +229,17 @@ export interface AdminUserResponse {
   profileImage?: string;
   walletBalance?: number;
   totalOrders?: number;
+  deliveredOrders?: number;
+  totalSpending?: number;
+  averageOrderValue?: number;
+  lastOrderAt?: string;
   totalReviews?: number;
   enabled?: boolean;
   blocked?: boolean;
   deleted?: boolean;
+  rewardPoints?: number;
+  lastLoginAt?: string;
+  addresses?: any[];
   createdAt?: string;
 }
 
@@ -431,6 +439,9 @@ export interface Coupon {
   outletIds?: Array<string | number>;
   outletNames?: string[];
   deleted?: boolean;
+  rewardPoints?: number;
+  lastLoginAt?: string;
+  addresses?: any[];
   createdAt?: string;
   updatedAt?: string;
 }

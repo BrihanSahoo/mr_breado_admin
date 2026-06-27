@@ -108,6 +108,8 @@ export const businessOutletsService = {
   },
   productCatalog: () => request<any>({ url: "/admin/products/catalog" }),
   saveBranding: (id: number | string, data: Record<string, any>) => request<any>({ method: "POST", url: `/admin/outlets/${id}/branding`, data }),
+  controls: (id: number | string) => request<any>({ url: `/admin/outlets/${id}/controls` }),
+  saveControls: (id: number | string, data: Record<string, any>) => request<any>({ method: "PUT", url: `/admin/outlets/${id}/controls`, data }),
   exportAccounting: async (from: string, to: string) => {
     const blob = await downloadBlob({ url: "/admin/reports/accounting-export.csv", params: { from, to } });
     saveBlob(blob, `mr_breado_accounting_${from}_${to}.csv`);
@@ -145,6 +147,8 @@ export const businessOutletsV41Service = {
   stockSubmissions: (id: number | string) => request<any>({ url: `/admin/outlets/${id}/stock-submissions` }),
   setLocation: (id: number | string, data: Record<string, any>) => request<any>({ method: "POST", url: `/admin/outlets/${id}/set-location`, data }),
   saveBranding: (id: number | string, data: Record<string, any>) => request<any>({ method: "POST", url: `/admin/outlets/${id}/branding`, data }),
+  controls: (id: number | string) => request<any>({ url: `/admin/outlets/${id}/controls` }),
+  saveControls: (id: number | string, data: Record<string, any>) => request<any>({ method: "PUT", url: `/admin/outlets/${id}/controls`, data }),
   availableProducts: async (id: number | string) => {
     const data = await request<any>({ url: `/admin/outlets/${id}/available-products` });
     const allRaw = data?.all ?? data?.products ?? [];

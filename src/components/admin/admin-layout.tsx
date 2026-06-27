@@ -38,13 +38,15 @@ import {
   Sparkles,
   BadgeIndianRupee,
   TicketCheck,
+  AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { authStore } from "@/store/auth";
 import { ADMIN_LOGO_URL } from "@/api/endpoints";
 import { authService } from "@/services/auth.service";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { customerEngagementService } from "@/services/customer-engagement.service";
 
 type Item = {
   label: string;
@@ -347,6 +349,8 @@ function LogoutButton({ compact = false }: { compact?: boolean }) {
 
 export function AdminLayout({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const integrationHealth = useQuery({ queryKey: ["integration-health"], queryFn: customerEngagementService.integrationHealth, staleTime: 30_000, retry: 1 });
+  const missingIntegrations = integrationHealth.data?.missing ?? [];
   useEffect(() => {
     const onPress = (event: Event) => {
       const target = event.target as HTMLElement | null;
@@ -387,6 +391,14 @@ export function AdminLayout({ children }: { children: ReactNode }) {
             </SheetContent>
           </Sheet>
           <div className="flex-1" />
+          {missingIntegrations.length > 0 && <Link
+            to="/api-keys"
+            className="hidden animate-pulse items-center gap-2 rounded-xl border border-amber-400 bg-amber-50 px-3 py-2 text-xs font-black text-amber-800 shadow-sm sm:flex"
+            title={`Configuration required: ${missingIntegrations.join(", ")}`}
+          >
+            <AlertTriangle className="h-4 w-4" />
+            {missingIntegrations.length} setup issue{missingIntegrations.length > 1 ? "s" : ""}
+          </Link>}
           <Link
             to="/notifications"
             className="relative rounded-xl border border-transparent p-2 text-primary transition hover:border-primary/30 hover:bg-primary/10"

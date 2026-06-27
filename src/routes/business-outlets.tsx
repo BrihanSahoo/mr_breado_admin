@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { haptic } from "@/lib/haptics";
 
 export const Route = createFileRoute("/business-outlets")({ component: BusinessOutletsPage });
 
@@ -167,11 +168,13 @@ function Metric({ title, value }: { title: string; value: any }) { return <Card 
 function Mini({ label, value }: { label: string; value: any }) { return <div className="rounded-2xl bg-muted/40 p-3"><div className="text-xs text-muted-foreground">{label}</div><div className="font-bold">{value}</div></div>; }
 
 function OutletForm({ onSubmit }: { onSubmit: (data: any) => void }) {
-  const [data, setData] = useState<any>({ name: "Mr. Breado - ", serviceRadiusKm: 5, isOpen: true });
+  const [data, setData] = useState<any>({ name: "Mr. Breado - ", serviceRadiusKm: 5, isOpen: false, logoUrl: "https://res.cloudinary.com/dty0zfd7g/image/upload/v1782468916/mr-breado/brands/file_nzsycz.jpg", featureToggles: { delivery: true, takeaway: true, cod: true, onlinePayment: true, riderAssignment: true, offers: true } });
   return <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); onSubmit(data); }}>
     <DialogHeader><DialogTitle>Add Mr. Breado Outlet</DialogTitle></DialogHeader>
-    {[["name","Outlet Name"],["address","Address"],["city","City"],["pincode","Pincode"],["latitude","Latitude"],["longitude","Longitude"],["managerName","Manager Name"],["managerPhone","Manager Phone"],["managerEmail","Manager Email"],["gstin","GSTIN (15 characters)"],["invoiceLegalName","Invoice Legal Name"],["invoiceAddress","Invoice Address"]].map(([k,l]) => <div key={k} className="space-y-1"><Label>{l}</Label><Input value={data[k] ?? ""} onChange={(e) => setData((d:any) => ({...d,[k]: e.target.value}))} /></div>)}
-    <Button type="submit" className="w-full">Create Outlet</Button>
+    <div className="grid gap-3 sm:grid-cols-2">{[["name","Outlet Name"],["address","Address"],["city","City"],["pincode","Pincode"],["latitude","Latitude"],["longitude","Longitude"],["managerName","Manager Name"],["managerPhone","Manager Phone"],["managerEmail","Manager Email"],["gstin","GSTIN (15 characters)"],["invoiceLegalName","Invoice Legal Name"],["invoiceAddress","Invoice Address"]].map(([k,l]) => <div key={k} className={`space-y-1 ${["address","invoiceAddress"].includes(k) ? "sm:col-span-2" : ""}`}><Label>{l}</Label><Input value={data[k] ?? ""} onChange={(e) => setData((d:any) => ({...d,[k]: e.target.value}))} /></div>)}</div>
+    <div className="space-y-2 rounded-2xl border bg-muted/20 p-3"><Label>Shared Mr. Breado logo</Label><div className="flex items-center gap-3"><img src={data.logoUrl} alt="Mr. Breado logo" className="h-14 w-14 rounded-xl border bg-white object-contain p-1"/><Input value={data.logoUrl} onChange={(e) => setData((d:any) => ({...d,logoUrl:e.target.value}))}/></div><p className="text-xs text-muted-foreground">Prefilled for every new outlet. You can replace it later from Branding.</p></div>
+    <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm"><b>Safe default:</b> the outlet starts closed. The outlet manager can open it only after submitting stock.</div>
+    <Button type="submit" className="min-h-11 w-full" onClick={() => haptic([18,20,18])}>Create Outlet</Button>
   </form>;
 }
 

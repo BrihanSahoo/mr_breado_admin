@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, CalendarDays, Download, MapPin, Package, Phone, TrendingDown, TrendingUp, WalletCards, ShoppingBag, IndianRupee, Activity, UserRound, Clock3, Plus, Image as ImageIcon, FileText } from "lucide-react";
+import { ArrowLeft, CalendarDays, Download, MapPin, Package, Phone, TrendingDown, TrendingUp, WalletCards, ShoppingBag, IndianRupee, Activity, UserRound, Clock3, Plus, Image as ImageIcon, FileText, SlidersHorizontal, Truck, ShoppingCart, CreditCard, Bike, Tags } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { businessOutletsV41Service } from "@/services/business-outlets.service";
@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { haptic } from "@/lib/haptics";
 
 function money(v: any) { return `₹${Number(v || 0).toLocaleString("en-IN")}`; }
 function today() { return new Date().toISOString().slice(0, 10); }
@@ -41,6 +42,7 @@ export function OutletCommandCenterPage({ outletId, onBack }: { outletId: string
   const [assignOpen, setAssignOpen] = useState(false);
   const [gstinOpen, setGstinOpen] = useState(false);
   const [stockOpen, setStockOpen] = useState<any | null>(null);
+  const [controlsOpen, setControlsOpen] = useState(false);
   const query = useQuery({ queryKey: ["outlet-v41-dashboard", outletId, from, to], queryFn: () => businessOutletsV41Service.fullDashboard(outletId, { from, to }), refetchInterval: 15000, refetchOnWindowFocus: true });
   const ordersQuery = useQuery({ queryKey: ["outlet-order-history", outletId], queryFn: () => businessOutletsV41Service.orders(outletId), refetchInterval: 10000, refetchOnWindowFocus: true });
   const exportCsv = useMutation({ mutationFn: () => businessOutletsV41Service.exportOutletAccounting(outletId, from, to) });
@@ -75,6 +77,7 @@ export function OutletCommandCenterPage({ outletId, onBack }: { outletId: string
           <Dialog open={assignOpen} onOpenChange={setAssignOpen}><DialogTrigger asChild><Button variant="outline"><Plus className="mr-2 h-4 w-4" />Add Items</Button></DialogTrigger><DialogContent className="max-w-5xl"><AssignOutletItemsForm outletId={outletId} onDone={() => { setAssignOpen(false); qc.invalidateQueries({ queryKey: ["outlet-v41-dashboard"] }); }} /></DialogContent></Dialog>
           <Dialog open={brandingOpen} onOpenChange={setBrandingOpen}><DialogTrigger asChild><Button variant="outline"><ImageIcon className="mr-2 h-4 w-4" />Branding</Button></DialogTrigger><DialogContent className="max-w-2xl"><BrandingForm outlet={outlet} outletId={outletId} onDone={() => { setBrandingOpen(false); qc.invalidateQueries({ queryKey: ["outlet-v41-dashboard"] }); }} /></DialogContent></Dialog>
           <Dialog open={gstinOpen} onOpenChange={setGstinOpen}><DialogTrigger asChild><Button variant={outlet.gstin ? "outline" : "destructive"}><FileText className="mr-2 h-4 w-4" />{outlet.gstin ? "Edit GSTIN" : "Add GSTIN"}</Button></DialogTrigger><DialogContent><GstinForm outlet={outlet} outletId={outletId} onDone={() => { setGstinOpen(false); qc.invalidateQueries({ queryKey: ["outlet-v41-dashboard"] }); }} /></DialogContent></Dialog>
+          <Dialog open={controlsOpen} onOpenChange={setControlsOpen}><DialogTrigger asChild><Button variant="outline" onClick={() => haptic()}><SlidersHorizontal className="mr-2 h-4 w-4" />Outlet Controls</Button></DialogTrigger><DialogContent className="max-w-2xl"><OutletControlsForm outlet={outlet} outletId={outletId} onDone={() => { setControlsOpen(false); qc.invalidateQueries({ queryKey: ["outlet-v41-dashboard"] }); }} /></DialogContent></Dialog>
           <Dialog open={locationOpen} onOpenChange={setLocationOpen}><DialogTrigger asChild><Button><MapPin className="mr-2 h-4 w-4" />Set Location</Button></DialogTrigger><DialogContent><LocationForm outlet={outlet} outletId={outletId} onDone={() => { setLocationOpen(false); qc.invalidateQueries({ queryKey: ["outlet-v41-dashboard"] }); }} /></DialogContent></Dialog>
         </div>
       </div>
@@ -226,6 +229,73 @@ function Metric({ title, value, icon }: { title: string; value: any; icon?: any 
 function Row({ k, v }: { k: string; v: any }) { return <div className="flex justify-between gap-4 rounded-xl bg-muted/30 px-3 py-2"><span className="text-muted-foreground">{k}</span><b className="text-right">{v || "--"}</b></div>; }
 function Empty({ text }: { text: string }) { return <div className="rounded-2xl border border-dashed p-6 text-center text-sm text-muted-foreground">{text}</div>; }
 function FoodCard({ title, icon, rows }: { title: string; icon: any; rows: any[] }) { return <Card><CardHeader><CardTitle className="flex items-center gap-2">{icon}{title}</CardTitle></CardHeader><CardContent className="space-y-2">{rows.length === 0 && <Empty text="No sales data yet." />}{rows.slice(0,10).map((f:any)=><div key={`${title}-${f.productId}`} className="flex justify-between rounded-xl bg-muted/30 px-3 py-2 text-sm"><span>{f.productName}</span><b>{f.soldQuantity ?? 0} sold · {money(f.revenue)}</b></div>)}</CardContent></Card>; }
+
+function OutletControlsForm({ outlet, outletId, onDone }: { outlet: any; outletId: string; onDone: () => void }) {
+  const query = useQuery({
+    queryKey: ["outlet-controls", outletId],
+    queryFn: () => businessOutletsV41Service.controls(outletId),
+  });
+  const payload = (query.data as any)?.data ?? query.data ?? {};
+  const [form, setForm] = useState<any>({
+    delivery: true,
+    takeaway: true,
+    cod: true,
+    onlinePayment: true,
+    riderAssignment: true,
+    offers: true,
+    serviceRadiusKm: outlet.serviceRadiusKm ?? outlet.deliveryRadiusKm ?? outlet.service_radius_km ?? 5,
+  });
+  useEffect(() => {
+    if (!query.isSuccess) return;
+    const toggles = payload.featureToggles ?? payload.feature_toggles ?? {};
+    setForm((current: any) => ({
+      ...current,
+      delivery: toggles.delivery !== false,
+      takeaway: toggles.takeaway !== false,
+      cod: toggles.cod !== false,
+      onlinePayment: toggles.onlinePayment !== false && toggles.online_payment !== false,
+      riderAssignment: toggles.riderAssignment !== false && toggles.rider_assignment !== false,
+      offers: toggles.offers !== false,
+      serviceRadiusKm: payload.serviceRadiusKm ?? current.serviceRadiusKm,
+    }));
+  }, [query.isSuccess, query.data]);
+  const mutation = useMutation({
+    mutationFn: () => businessOutletsV41Service.saveControls(outletId, {
+      featureToggles: {
+        delivery: !!form.delivery,
+        takeaway: !!form.takeaway,
+        cod: !!form.cod,
+        onlinePayment: !!form.onlinePayment,
+        riderAssignment: !!form.riderAssignment,
+        offers: !!form.offers,
+      },
+      serviceRadiusKm: Number(form.serviceRadiusKm || 0),
+    }),
+    onSuccess: () => { haptic([18, 25, 18]); toast.success("Outlet-specific controls saved"); onDone(); },
+    onError: (error: any) => toast.error(error?.message || "Unable to save outlet controls"),
+  });
+  const rows = [
+    { key: "delivery", icon: Truck, title: "Home delivery", note: "Allow customers within this outlet service radius to order delivery." },
+    { key: "takeaway", icon: ShoppingCart, title: "Takeaway", note: "Allow pickup orders from this outlet." },
+    { key: "cod", icon: IndianRupee, title: "Cash on delivery", note: "Show COD only for this outlet." },
+    { key: "onlinePayment", icon: CreditCard, title: "Online payment", note: "Use the admin Razorpay credentials for this outlet." },
+    { key: "riderAssignment", icon: Bike, title: "Rider assignment", note: "Allow verified online riders to receive this outlet orders." },
+    { key: "offers", icon: Tags, title: "Offers and coupons", note: "Allow outlet-targeted offers and coupons." },
+  ];
+  return <form className="max-h-[82vh] space-y-4 overflow-y-auto pr-1" onSubmit={(event) => { event.preventDefault(); haptic(); mutation.mutate(); }}>
+    <DialogHeader><DialogTitle>Outlet-specific business controls</DialogTitle></DialogHeader>
+    <p className="text-sm text-muted-foreground">These values override global settings only for <b>{outlet.name || "this outlet"}</b>. Customer checkout, seller operations and rider assignment read the same backend record.</p>
+    {query.isLoading ? <div className="rounded-2xl border p-5 text-center text-sm text-muted-foreground">Loading outlet controls…</div> : <div className="grid gap-3 sm:grid-cols-2">
+      {rows.map((row) => { const Icon = row.icon; const enabled = !!form[row.key]; return <button type="button" key={row.key} onClick={() => { haptic(); setForm((current: any) => ({ ...current, [row.key]: !current[row.key] })); }} className={`min-h-28 rounded-2xl border p-4 text-left transition ${enabled ? "border-primary/40 bg-primary/5 shadow-sm" : "bg-muted/20 opacity-70"}`}>
+        <div className="flex items-center justify-between gap-3"><span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-background"><Icon className={`h-5 w-5 ${enabled ? "text-primary" : "text-muted-foreground"}`} /></span><span className={`rounded-full px-2.5 py-1 text-xs font-bold ${enabled ? "bg-emerald-500/15 text-emerald-600" : "bg-muted text-muted-foreground"}`}>{enabled ? "Enabled" : "Disabled"}</span></div>
+        <p className="mt-3 font-bold">{row.title}</p><p className="mt-1 text-xs text-muted-foreground">{row.note}</p>
+      </button>; })}
+    </div>}
+    <div className="space-y-2 rounded-2xl border bg-muted/20 p-4"><Label>Outlet delivery service radius (km)</Label><Input type="number" min="0" step="0.1" value={form.serviceRadiusKm} onChange={(event) => setForm((current: any) => ({ ...current, serviceRadiusKm: event.target.value }))} /><p className="text-xs text-muted-foreground">Foods from this outlet become out of range when the customer is beyond this radius.</p></div>
+    <Button disabled={query.isLoading || mutation.isPending} type="submit" className="min-h-11 w-full">{mutation.isPending ? "Saving outlet controls…" : "Save outlet controls"}</Button>
+  </form>;
+}
+
 function LocationForm({ outlet, outletId, onDone }: { outlet: any; outletId: string; onDone: () => void }) { const [data,setData]=useState<any>({ latitude: outlet.latitude || "", longitude: outlet.longitude || "", serviceRadiusKm: outlet.serviceRadiusKm ?? outlet.service_radius_km ?? outlet.deliveryRadiusKm ?? 5, address: outletAddress(outlet) === "Address not configured" ? "" : outletAddress(outlet), googleMapLink: outlet.googleMapLink || "" }); const m=useMutation({ mutationFn:()=>businessOutletsV41Service.setLocation(outletId,data), onSuccess:()=>{toast.success("Outlet location updated");onDone();} }); return <form className="space-y-3" onSubmit={(e)=>{e.preventDefault();m.mutate();}}><DialogHeader><DialogTitle>Set exact outlet location</DialogTitle></DialogHeader><Label>Latitude (north/south, e.g. 20.5737)</Label><Input value={data.latitude} onChange={(e)=>setData((d:any)=>({...d,latitude:e.target.value}))}/><Label>Longitude (east/west, e.g. 86.5641)</Label><Input value={data.longitude} onChange={(e)=>setData((d:any)=>({...d,longitude:e.target.value}))}/><Label>Delivery radius km</Label><Input value={data.serviceRadiusKm} onChange={(e)=>setData((d:any)=>({...d,serviceRadiusKm:e.target.value}))}/><Label>Address</Label><Textarea value={data.address} onChange={(e)=>setData((d:any)=>({...d,address:e.target.value}))}/><Button className="w-full" type="submit">Save location</Button></form>; }
 function StockUpdateForm({ outletId, item, onDone }: { outletId: string; item: any; onDone: () => void }) { const [data,setData]=useState<any>({ productId:item?.productId || item?.product_id, stockQuantity:item?.stockQuantity ?? item?.stock_quantity ?? 0, lowStockAlert:item?.lowStockAlert ?? item?.low_stock_alert ?? 5, preparationMinutes:item?.preparation_minutes ?? 15, note:"Admin stock correction" }); const m=useMutation({ mutationFn:()=>businessOutletsV41Service.updateStock(outletId,[data]), onSuccess:()=>{toast.success("Stock updated");onDone();} }); return <form className="space-y-3" onSubmit={(e)=>{e.preventDefault();m.mutate();}}><DialogHeader><DialogTitle>Update stock - {item?.productName}</DialogTitle></DialogHeader><Label>Stock quantity</Label><Input value={data.stockQuantity} onChange={(e)=>setData((d:any)=>({...d,stockQuantity:e.target.value}))}/><Label>Low stock alert</Label><Input value={data.lowStockAlert} onChange={(e)=>setData((d:any)=>({...d,lowStockAlert:e.target.value}))}/><Label>Preparation minutes</Label><Input value={data.preparationMinutes} onChange={(e)=>setData((d:any)=>({...d,preparationMinutes:e.target.value}))}/><Label>Note</Label><Textarea value={data.note} onChange={(e)=>setData((d:any)=>({...d,note:e.target.value}))}/><Button className="w-full" type="submit">Save stock</Button></form>; }
 

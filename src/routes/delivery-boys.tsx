@@ -17,6 +17,10 @@ import {
   ShieldCheck,
   Smartphone,
   Wallet,
+  Mail,
+  Paperclip,
+  Send,
+  AlertTriangle,
   X,
   XCircle,
 } from "lucide-react";
@@ -25,6 +29,7 @@ import { ServerTable, type ServerColumn, useTableSearch } from "@/components/adm
 import { StatusBadge } from "@/components/admin/status-badge";
 import { useDrivers, driverKeys } from "@/hooks/queries/use-drivers";
 import { driversService } from "@/services/drivers.service";
+import { customerEngagementService, type EmailCategory } from "@/services/customer-engagement.service";
 import type {
   AdminDriverCashResponse,
   RiderFinanceHistoryRecord,
@@ -147,6 +152,7 @@ function RiderControl({ rider, onClose, onChanged, verify }: {
   const [detail, setDetail] = useState<AdminDriverCashResponse>(rider);
   const [loading, setLoading] = useState(true);
   const [preview, setPreview] = useState<{ url: string; label: string } | null>(null);
+  const [emailOpen, setEmailOpen] = useState(false);
 
   const reload = async () => {
     setLoading(true);
@@ -240,6 +246,7 @@ function RiderControl({ rider, onClose, onChanged, verify }: {
           <div><h2 className="text-2xl font-black">{detail.driverName || "Rider"}</h2><p className="text-sm text-muted-foreground">Verification, COD settlement and payout ledger</p></div>
         </div>
         <div className="flex gap-2">
+          <button onClick={() => { haptic(); setEmailOpen(true); }} className="rounded-xl border border-primary/30 p-2 text-primary hover:bg-primary/10" title="Email rider"><Mail className="h-5 w-5" /></button>
           <button onClick={() => { haptic(); reload(); }} className="rounded-xl border border-border p-2 hover:bg-muted" title="Refresh"><RefreshCw className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} /></button>
           <button onClick={onClose} className="rounded-xl border border-border p-2 hover:bg-muted"><X className="h-5 w-5" /></button>
         </div>
@@ -311,6 +318,8 @@ function RiderControl({ rider, onClose, onChanged, verify }: {
       </div>}
     </div>
 
+    {emailOpen && <RiderEmailPanel rider={detail} onClose={() => setEmailOpen(false)} />}
+
     {preview && <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/85 p-4" onClick={() => setPreview(null)}><div className="max-h-[92vh] w-full max-w-5xl overflow-hidden rounded-2xl border border-border bg-card shadow-2xl" onClick={(event) => event.stopPropagation()}><div className="flex items-center justify-between border-b border-border p-4"><div><div className="font-bold capitalize">{preview.label}</div><div className="text-xs text-muted-foreground">Rider verification document</div></div><div className="flex items-center gap-2"><a href={preview.url} download target="_blank" rel="noreferrer" className="rounded-lg border border-border p-2 hover:bg-muted"><Download className="h-4 w-4" /></a><button onClick={() => setPreview(null)} className="rounded-lg border border-border p-2 hover:bg-muted"><X className="h-4 w-4" /></button></div></div><div className="h-[75vh] bg-black/20 p-3">{/\.pdf(?:$|\?)/i.test(preview.url) || preview.url.startsWith("data:application/pdf") ? <iframe src={preview.url} title={preview.label} className="h-full w-full rounded-xl bg-white" /> : <img src={preview.url} alt={preview.label} className="h-full w-full rounded-xl object-contain" />}</div></div></div>}
   </div>;
 }
@@ -333,3 +342,46 @@ function Empty({ text }: { text: string }) { return <div className="rounded-xl b
 function Summary({ title, value, icon }: { title: string; value: string; icon: React.ReactNode }) { return <div className="rounded-2xl border border-border bg-card p-4 shadow-sm"><div className="flex items-center justify-between text-muted-foreground"><span className="text-xs font-bold uppercase tracking-wider">{title}</span>{icon}</div><div className="mt-2 text-2xl font-black">{value}</div></div>; }
 function Info({ label, value }: { label: string; value: string }) { return <div><div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{label}</div><div className="mt-1 break-words font-semibold">{value}</div></div>; }
 function Money({ value }: { value?: number }) { return <span className="font-bold">₹{Number(value || 0).toFixed(2)}</span>; }
+
+
+function RiderEmailPanel({ rider, onClose }: { rider: AdminDriverCashResponse; onClose: () => void }) {
+  const id = riderRef(rider);
+  const name = rider.driverName || "Rider";
+  const email = (rider as any).driverEmail || (rider as any).email || "";
+  const [category, setCategory] = useState<EmailCategory>("GENERAL");
+  const [subject, setSubject] = useState("Message from Mr. Breado");
+  const [bodyText, setBodyText] = useState(`Hello ${name},
+
+You have received a message from the Mr. Breado administration team.
+
+Add your message here.
+
+Regards,
+Mr. Breado Team`);
+  const [files, setFiles] = useState<File[]>([]);
+  const config = useQuery({ queryKey: ["email-config"], queryFn: customerEngagementService.emailConfig, staleTime: 30_000 });
+  const templates = useQuery({ queryKey: ["email-templates", name], queryFn: () => customerEngagementService.templates(name), staleTime: 60_000 });
+  const sendEmail = useMutation({
+    mutationFn: () => customerEngagementService.emailRider(id, { category, subject, bodyText, attachments: files }),
+    onSuccess: () => { haptic([35, 35, 55]); toast.success("Email sent to rider"); onClose(); },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const applyTemplate = (next: EmailCategory) => {
+    setCategory(next);
+    const template = templates.data?.find((row: any) => row.category === next);
+    if (template) { setSubject(template.subject || ""); setBodyText(template.bodyText || ""); }
+  };
+  return <div className="fixed inset-0 z-[80] overflow-y-auto bg-black/80 p-3 backdrop-blur-md sm:p-6">
+    <div className="mx-auto my-4 w-full max-w-3xl rounded-3xl border border-border bg-card p-5 shadow-2xl sm:p-7">
+      <div className="mb-5 flex items-center justify-between gap-3"><div><h3 className="text-2xl font-black">Email {name}</h3><p className="text-sm text-muted-foreground">{email || "No email address is saved for this rider."}</p></div><button onClick={onClose} className="rounded-xl border border-border p-2 hover:bg-muted"><X className="h-5 w-5" /></button></div>
+      {!config.data?.configured && <div className="mb-4 animate-pulse rounded-2xl border border-amber-400 bg-amber-50 p-4 text-amber-900"><div className="flex gap-3"><AlertTriangle className="h-5 w-5" /><div><div className="font-black">Email API configuration required</div><div className="text-sm">Add RESEND_API_KEY and ADMIN_EMAIL_FROM to the backend environment.</div></div></div></div>}
+      <div className="grid gap-4">
+        <label className="grid gap-2 text-sm font-bold">Email section<select value={category} onChange={(event) => applyTemplate(event.target.value as EmailCategory)} className="min-h-12 rounded-xl border border-input bg-background px-3 text-base"><option value="PROMOTIONAL">Promotional</option><option value="ALERT">Alert</option><option value="PAYMENT_REQUEST">Payment request</option><option value="DOCUMENT">PDF / image / document</option><option value="GENERAL">Admin message</option></select></label>
+        <label className="grid gap-2 text-sm font-bold">Subject<input value={subject} onChange={(event) => setSubject(event.target.value)} className="min-h-12 rounded-xl border border-input bg-background px-3 text-base" /></label>
+        <label className="grid gap-2 text-sm font-bold">Message<textarea value={bodyText} onChange={(event) => setBodyText(event.target.value)} className="min-h-56 rounded-xl border border-input bg-background p-3 text-base leading-relaxed" /></label>
+        <label className="rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-4 text-sm font-bold"><div className="flex items-center gap-2"><Paperclip className="h-4 w-4" />Attach images, PDF, Word or spreadsheet files</div><input type="file" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" className="mt-3 block w-full text-sm" onChange={(event) => setFiles(Array.from(event.target.files || []).slice(0, 5))} /></label>
+        <button disabled={!config.data?.configured || !email || sendEmail.isPending || !subject.trim() || !bodyText.trim()} onClick={() => sendEmail.mutate()} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 font-black text-primary-foreground disabled:opacity-40"><Send className="h-4 w-4" />{sendEmail.isPending ? "Sending…" : "Send email"}</button>
+      </div>
+    </div>
+  </div>;
+}
