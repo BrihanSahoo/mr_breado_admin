@@ -170,10 +170,19 @@ export function OutletCommandCenterPage({ outletId, onBack }: { outletId: string
       </CardContent>
     </Card>
 
+    <Card><CardHeader><CardTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5" /> Offline counter sales</CardTitle></CardHeader><CardContent className="space-y-3">
+      {(data.offlineSalesRows ?? []).length === 0 && <Empty text="No offline counter bill recorded for this outlet yet." />}
+      {(data.offlineSalesRows ?? []).slice(0, 50).map((sale: any) => <div key={sale._id || sale.id} className="rounded-2xl border bg-muted/20 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2"><div><b>{sale.paymentMode || 'CASH'} counter sale</b><p className="text-xs text-muted-foreground">{String(sale.createdAt || '').replace('T',' ').slice(0,19)}</p></div><p className="text-lg font-bold">{money(sale.total)}</p></div>
+        <div className="mt-3 space-y-1">{(sale.items || []).map((item:any, i:number) => <div key={`${sale._id || sale.id}-${i}`} className="flex justify-between rounded-xl bg-background px-3 py-2 text-sm"><span>{item.quantity || 1} × {item.name || 'Food item'}</span><b>{money(item.total)}</b></div>)}</div>
+        {sale.notes ? <p className="mt-2 text-xs text-muted-foreground">{sale.notes}</p> : null}
+      </div>)}
+    </CardContent></Card>
+
     <div className="grid gap-4 xl:grid-cols-3">
       <Card className="xl:col-span-2"><CardHeader><CardTitle className="flex items-center gap-2"><CalendarDays className="h-5 w-5" /> Daily business ledger</CardTitle></CardHeader><CardContent className="space-y-2">
         {(data.closingCalendar ?? []).length === 0 && <Empty text="No day closing submitted for this date range." />}
-        {(data.closingCalendar ?? []).map((d: any) => <div key={d.id} className="grid gap-2 rounded-2xl border bg-muted/30 p-3 text-sm md:grid-cols-6"><b>{String(d.closing_date || d.closingDate).slice(0,10)}</b><span>Online {money(d.online_sales)}</span><span>COD {money(d.cod_sales)}</span><span>Offline {money(d.offline_sales)}</span><span>Total {money(d.total_sales)}</span><span>Net Cash {money(d.net_cash)}</span></div>)}
+        {(data.closingCalendar ?? []).map((d: any) => <div key={d.id} className="grid gap-2 rounded-2xl border bg-muted/30 p-3 text-sm md:grid-cols-6"><b>{String(d.businessDate || d.closing_date || d.closingDate || d.createdAt || '').slice(0,10)}</b><span>Online {money(d.onlineSales ?? d.online_sales)}</span><span>COD {money(d.codSales ?? d.cod_sales)}</span><span>Offline {money(d.offlineSales ?? d.offline_sales)}</span><span>Total {money(d.totalSales ?? d.total_sales)}</span><span>Net Cash {money(d.netCash ?? d.net_cash ?? ((d.offlineCashSales ?? 0) - (d.refunds ?? 0) - (d.expenses ?? 0)))}</span></div>)}
       </CardContent></Card>
       <Card><CardHeader><CardTitle className="flex items-center gap-2"><Phone className="h-5 w-5" /> Manager & contact</CardTitle></CardHeader><CardContent className="space-y-3 text-sm">
         <Row k="Manager" v={outlet.manager_name || outlet.managerName} />
