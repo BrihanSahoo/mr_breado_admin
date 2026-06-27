@@ -348,7 +348,7 @@ export function EmailComposer({ recipient, role }: { recipient: any; role: "CUST
   });
 
   return <div className="space-y-5">
-    {!config.data?.configured && <div className="animate-pulse rounded-2xl border border-amber-400 bg-amber-50 p-4 text-amber-900"><div className="flex items-start gap-3"><AlertTriangle className="mt-0.5 h-5 w-5" /><div><div className="font-black">Email API configuration required</div><div className="mt-1 text-sm">Add <code>RESEND_API_KEY</code> and <code>ADMIN_EMAIL_FROM</code> to the backend environment. Email sending remains disabled until both are configured.</div></div></div></div>}
+    {!config.data?.configured && <div className="animate-pulse rounded-2xl border border-amber-400 bg-amber-50 p-4 text-amber-900"><div className="flex items-start gap-3"><AlertTriangle className="mt-0.5 h-5 w-5" /><div><div className="font-black">SMTP email configuration required</div><div className="mt-1 text-sm">Open <b>API Keys</b> and configure SMTP host, email username, app password and sender email. Email sending remains disabled until SMTP is verified.</div></div></div></div>}
     <div className="grid gap-5 xl:grid-cols-[1.35fr_.65fr]">
       <section className="rounded-3xl border border-border bg-gradient-to-br from-card to-orange-50/40 p-5 shadow-sm sm:p-7">
         <div className="mb-5"><h3 className="text-xl font-black">Email {recipientName}</h3><p className="text-sm text-muted-foreground">To: {recipientEmail || "No email address available"}</p></div>

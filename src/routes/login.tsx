@@ -141,7 +141,7 @@ function PasswordRecoveryDialog({ initialEmail, onClose }: { initialEmail: strin
       haptic([20, 20, 20]);
       if (root.emailSent) toast.success("A six-digit reset code was sent to the admin email.");
       else if (root.recoveryKeyAvailable) toast.success("Use the configured admin recovery key to continue.");
-      else toast.info("Password recovery email is not configured. Configure Resend or an admin recovery key on the backend.");
+      else toast.info("Password recovery email is not configured. Configure SMTP email delivery or an admin recovery key on the backend.");
     },
     onError: (error) => toast.error(apiErrorMessage(error, "Password recovery could not be started.")),
   });
@@ -180,7 +180,7 @@ function PasswordRecoveryDialog({ initialEmail, onClose }: { initialEmail: strin
           ) : (
             <>
               <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
-                <div className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" /><span>{deliveryInfo.emailSent ? "Enter the six-digit code sent to the admin email." : deliveryInfo.recoveryKeyAvailable ? "Enter the configured recovery key. You can also enter an email code when email delivery is configured." : "Email delivery and recovery key are not configured on the backend. Add RESEND_API_KEY with ADMIN_RESET_FROM_EMAIL, or ADMIN_PASSWORD_RECOVERY_KEY, then redeploy."}</span></div>
+                <div className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" /><span>{deliveryInfo.emailSent ? "Enter the six-digit code sent to the admin email." : deliveryInfo.recoveryKeyAvailable ? "Enter the configured recovery key. You can also enter an email code when email delivery is configured." : "Email delivery and recovery key are not configured on the backend. Configure SMTP from API Keys, or add ADMIN_PASSWORD_RECOVERY_KEY, then retry."}</span></div>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="block text-sm font-bold">Email code<input inputMode="numeric" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} className="mt-1 h-12 w-full rounded-xl border bg-background px-3 text-base tracking-[.35em] outline-none focus:border-primary" placeholder="000000" /></label>

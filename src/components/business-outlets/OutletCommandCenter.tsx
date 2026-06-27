@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { haptic } from "@/lib/haptics";
+import { OutletMapPicker } from "@/components/maps/OutletMapPicker";
 
 function money(v: any) { return `₹${Number(v || 0).toLocaleString("en-IN")}`; }
 function today() { return new Date().toISOString().slice(0, 10); }
@@ -296,7 +297,25 @@ function OutletControlsForm({ outlet, outletId, onDone }: { outlet: any; outletI
   </form>;
 }
 
-function LocationForm({ outlet, outletId, onDone }: { outlet: any; outletId: string; onDone: () => void }) { const [data,setData]=useState<any>({ latitude: outlet.latitude || "", longitude: outlet.longitude || "", serviceRadiusKm: outlet.serviceRadiusKm ?? outlet.service_radius_km ?? outlet.deliveryRadiusKm ?? 5, address: outletAddress(outlet) === "Address not configured" ? "" : outletAddress(outlet), googleMapLink: outlet.googleMapLink || "" }); const m=useMutation({ mutationFn:()=>businessOutletsV41Service.setLocation(outletId,data), onSuccess:()=>{toast.success("Outlet location updated");onDone();} }); return <form className="space-y-3" onSubmit={(e)=>{e.preventDefault();m.mutate();}}><DialogHeader><DialogTitle>Set exact outlet location</DialogTitle></DialogHeader><Label>Latitude (north/south, e.g. 20.5737)</Label><Input value={data.latitude} onChange={(e)=>setData((d:any)=>({...d,latitude:e.target.value}))}/><Label>Longitude (east/west, e.g. 86.5641)</Label><Input value={data.longitude} onChange={(e)=>setData((d:any)=>({...d,longitude:e.target.value}))}/><Label>Delivery radius km</Label><Input value={data.serviceRadiusKm} onChange={(e)=>setData((d:any)=>({...d,serviceRadiusKm:e.target.value}))}/><Label>Address</Label><Textarea value={data.address} onChange={(e)=>setData((d:any)=>({...d,address:e.target.value}))}/><Button className="w-full" type="submit">Save location</Button></form>; }
+function LocationForm({ outlet, outletId, onDone }: { outlet: any; outletId: string; onDone: () => void }) {
+  const [data,setData]=useState<any>({ latitude: outlet.latitude || "", longitude: outlet.longitude || "", serviceRadiusKm: outlet.serviceRadiusKm ?? outlet.service_radius_km ?? outlet.deliveryRadiusKm ?? 5, address: outletAddress(outlet) === "Address not configured" ? "" : outletAddress(outlet), city: outlet.city || outlet.address?.city || "", state: outlet.state || outlet.address?.state || "", pincode: outlet.pincode || outlet.address?.pincode || "" });
+  const m=useMutation({
+    mutationFn:()=>businessOutletsV41Service.setLocation(outletId,data),
+    onSuccess:()=>{haptic([18,25,18]);toast.success("Outlet location updated");onDone();},
+    onError:(error:any)=>toast.error(error?.message || "Unable to save outlet location"),
+  });
+  const set=(key:string,value:any)=>setData((current:any)=>({...current,[key]:value}));
+  return <form className="max-h-[86vh] space-y-4 overflow-y-auto pr-1" onSubmit={(e)=>{e.preventDefault();haptic();m.mutate();}}>
+    <DialogHeader><DialogTitle>Set exact outlet location</DialogTitle></DialogHeader>
+    <p className="text-sm text-muted-foreground">Drop the pin on the outlet entrance. The selected coordinates and formatted address are stored in the backend and used for nearest-outlet discovery, service range and delivery pricing.</p>
+    <OutletMapPicker latitude={data.latitude} longitude={data.longitude} onChange={(point)=>setData((current:any)=>({...current,...point,address:point.address || current.address,city:point.city || current.city,state:point.state || current.state,pincode:point.pincode || current.pincode}))}/>
+    <div className="grid gap-3 sm:grid-cols-2"><div><Label>Latitude</Label><Input inputMode="decimal" value={data.latitude} onChange={(e)=>set("latitude",e.target.value)}/></div><div><Label>Longitude</Label><Input inputMode="decimal" value={data.longitude} onChange={(e)=>set("longitude",e.target.value)}/></div></div>
+    <div><Label>Delivery radius (km)</Label><Input type="number" min="0.1" max="100" step="0.1" value={data.serviceRadiusKm} onChange={(e)=>set("serviceRadiusKm",e.target.value)}/></div>
+    <div><Label>Full outlet address</Label><Textarea rows={3} value={data.address} onChange={(e)=>set("address",e.target.value)} placeholder="Building, road, area and landmark"/></div>
+    <div className="grid gap-3 sm:grid-cols-3"><div><Label>City</Label><Input value={data.city} onChange={(e)=>set("city",e.target.value)}/></div><div><Label>State</Label><Input value={data.state} onChange={(e)=>set("state",e.target.value)}/></div><div><Label>Pincode</Label><Input inputMode="numeric" value={data.pincode} onChange={(e)=>set("pincode",e.target.value)}/></div></div>
+    <Button disabled={m.isPending} className="min-h-11 w-full" type="submit">{m.isPending ? "Saving location…" : "Save outlet location"}</Button>
+  </form>;
+}
 function StockUpdateForm({ outletId, item, onDone }: { outletId: string; item: any; onDone: () => void }) { const [data,setData]=useState<any>({ productId:item?.productId || item?.product_id, stockQuantity:item?.stockQuantity ?? item?.stock_quantity ?? 0, lowStockAlert:item?.lowStockAlert ?? item?.low_stock_alert ?? 5, preparationMinutes:item?.preparation_minutes ?? 15, note:"Admin stock correction" }); const m=useMutation({ mutationFn:()=>businessOutletsV41Service.updateStock(outletId,[data]), onSuccess:()=>{toast.success("Stock updated");onDone();} }); return <form className="space-y-3" onSubmit={(e)=>{e.preventDefault();m.mutate();}}><DialogHeader><DialogTitle>Update stock - {item?.productName}</DialogTitle></DialogHeader><Label>Stock quantity</Label><Input value={data.stockQuantity} onChange={(e)=>setData((d:any)=>({...d,stockQuantity:e.target.value}))}/><Label>Low stock alert</Label><Input value={data.lowStockAlert} onChange={(e)=>setData((d:any)=>({...d,lowStockAlert:e.target.value}))}/><Label>Preparation minutes</Label><Input value={data.preparationMinutes} onChange={(e)=>setData((d:any)=>({...d,preparationMinutes:e.target.value}))}/><Label>Note</Label><Textarea value={data.note} onChange={(e)=>setData((d:any)=>({...d,note:e.target.value}))}/><Button className="w-full" type="submit">Save stock</Button></form>; }
 
 
@@ -374,7 +393,7 @@ function AssignOutletItemsForm({ outletId, onDone }: { outletId: string; onDone:
     const nextSelected: Record<string, boolean> = {};
     for (const p of rows) {
       const key = String(p.productId);
-      const alreadyAssigned = p.assigned === true || p.outletInventory != null || assignedById.has(key);
+      const alreadyAssigned = p.assigned === true || p.enabled === true || p.outletInventory != null;
       nextSelected[key] = alreadyAssigned;
       nextDraft[key] = {
         productId: p.productId,
@@ -403,19 +422,21 @@ function AssignOutletItemsForm({ outletId, onDone }: { outletId: string; onDone:
   };
 
   const save = () => {
+    const selectedCount = rows.filter((p: any) => selected[String(p.productId)]).length;
+    if (!selectedCount) return toast.error("Select at least one food item");
     const items = rows
-      .filter((p: any) => selected[String(p.productId)])
-      .map((p: any) => draft[String(p.productId)])
-      .filter((item: any) => item?.productId)
-      .map((item: any) => ({
-        ...item,
-        stockQuantity: Number(item.stockQuantity || 0),
-        isAvailable: Number(item.stockQuantity || 0) > 0,
-      }));
+      .map((p: any) => {
+        const key = String(p.productId);
+        const item = draft[key] ?? { productId: p.productId, stockQuantity: 0 };
+        const enabled = !!selected[key];
+        const stockQuantity = Number(item.stockQuantity || 0);
+        return { ...item, productId: p.productId, enabled, selected: enabled, stockQuantity, isAvailable: enabled && stockQuantity > 0 };
+      })
+      .filter((item: any) => item?.productId);
 
-    if (!items.length) return toast.error("Select at least one food item");
-    const invalid = items.find((item: any) => item.stockQuantity < 0);
-    if (invalid) return toast.error("Stock quantity cannot be negative");
+    const invalid = items.find((item: any) => item.enabled && (!Number.isInteger(item.stockQuantity) || item.stockQuantity < 0));
+    if (invalid) return toast.error("Stock quantity must be a whole number equal to or above zero");
+    haptic([16, 30, 16]);
     mutation.mutate(items);
   };
 
@@ -433,6 +454,7 @@ function AssignOutletItemsForm({ outletId, onDone }: { outletId: string; onDone:
 
     <div className="max-h-[62vh] space-y-3 overflow-y-auto pr-2">
       {query.isLoading && <Empty text="Loading admin-created foods..." />}
+      {query.isError && <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm"><b>Unable to load the master food catalog.</b><p className="mt-1 text-muted-foreground">Check the backend connection, then try again.</p><Button className="mt-3" size="sm" variant="outline" onClick={() => query.refetch()}>Try again</Button></div>}
       {rows.map((p: any) => {
         const key = String(p.productId);
         const d = draft[key] ?? {};
@@ -440,7 +462,7 @@ function AssignOutletItemsForm({ outletId, onDone }: { outletId: string; onDone:
         return <div key={key} className={`rounded-2xl border p-3 transition ${checked ? "border-primary/50 bg-primary/5" : "bg-muted/10"}`}>
           <div className="grid gap-3 lg:grid-cols-[52px_minmax(280px,1fr)_150px] lg:items-center">
             <label className="flex items-center gap-2 text-sm font-semibold">
-              <input type="checkbox" checked={checked} onChange={(e) => setSelected((x) => ({ ...x, [key]: e.target.checked }))} />
+              <input type="checkbox" checked={checked} onChange={(e) => { haptic(); setSelected((x) => ({ ...x, [key]: e.target.checked })); }} />
               <span className="lg:hidden">Use</span>
             </label>
 
