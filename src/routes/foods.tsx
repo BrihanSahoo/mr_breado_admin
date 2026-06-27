@@ -43,7 +43,7 @@ export function FoodsPage({ title, source = "admin" }: { title: string; source?:
   const [editing, setEditing] = useState<any | null>(null);
   const cuisinesQuery = useQuery({ queryKey:["admin-cuisines-for-form"], queryFn: async()=>{ const res=await api.get("/admin/cuisines"); const d=res.data?.data??res.data; return (Array.isArray(d)?d:(d?.items??[])).filter((x:any)=>x.active!==false&&String(x.status??'Active')!=='Inactive').map((x:any)=>({id:String(x.id??x._id),name:x.name??x.title,slug:x.slug})); }});
   const brandsQuery = useQuery({ queryKey:["admin-brands-for-form"], queryFn: async()=>{ const res=await api.get("/admin/brands"); const d=res.data?.data??res.data; return (Array.isArray(d)?d:(d?.items??[])).filter((x:any)=>x.active!==false).map((x:any)=>({id:String(x.id??x._id),name:x.name,slug:x.slug})); }});
-  const blankForm = { cuisineId: "", cuisineName: "", brandId: "", brandName: "", title: "", subtitle: "", description: "", price: "", discountPrice: "", categoryId: "", categoryName: "", foodType: "VEG", stockQuantity: "", isVeg: true, isAvailable: true, isBestseller: false, smallSizeExtra: "", mediumSizeExtra: "", largeSizeExtra: "", cake500gmExtra: "", cake1kgExtra: "", cake15kgExtra: "", cake2kgExtra: "", cakeMessageEnabled: false, cakeMessageCharge: "", customWeightEnabled: false, image: null as File | null };
+  const blankForm = { cuisineId: "", cuisineName: "", brandId: "", brandName: "", title: "", subtitle: "", description: "", price: "", discountPrice: "", categoryId: "", categoryName: "", foodType: "VEG", stockQuantity: "", isVeg: true, isAvailable: true, isBestseller: false, smallSizeExtra: "", mediumSizeExtra: "", largeSizeExtra: "", cake500gmExtra: "", cake1kgExtra: "", cake15kgExtra: "", cake2kgExtra: "", cakeMessageEnabled: false, cakeMessageCharge: "", customWeightEnabled: false, customWeightOptions: [] as Array<{ label: string; grams: string; price: string }>, image: null as File | null };
   const [form, setForm] = useState(blankForm);
 
   const applyProductToForm = (product: any) => {
@@ -76,6 +76,11 @@ export function FoodsPage({ title, source = "admin" }: { title: string; source?:
       cakeMessageEnabled: Boolean(product.cakeMessageEnabled ?? product.cake_message_enabled ?? false),
       cakeMessageCharge: String(pick(product.cakeMessageCharge, product.cake_message_charge)),
       customWeightEnabled: Boolean(product.customWeightEnabled ?? product.custom_weight_enabled ?? false),
+      customWeightOptions: (product.customWeightOptions ?? product.custom_weight_options ?? []).map((row:any) => ({
+        label: String(row.label ?? row.name ?? ""),
+        grams: String(row.grams ?? row.weightGrams ?? ""),
+        price: String(row.price ?? ""),
+      })),
       image: null,
     });
   };
@@ -251,6 +256,11 @@ export function FoodsPage({ title, source = "admin" }: { title: string; source?:
           if (!form.cuisineId) { toast.error("Select a cuisine."); return; }
           if (isPizza && (!form.smallSizeExtra || !form.mediumSizeExtra || !form.largeSizeExtra)) { toast.error("Enter Small, Medium and Large pizza prices."); return; }
           if (isCake && (!form.cake500gmExtra || !form.cake1kgExtra || !form.cake15kgExtra || !form.cake2kgExtra)) { toast.error("Enter all cake prices from 500gm to 2kg."); return; }
+          if (isCake && form.customWeightEnabled) {
+            if (!form.customWeightOptions.length) { toast.error("Add at least one custom cake weight."); return; }
+            const invalid = form.customWeightOptions.some((row:any) => !row.label.trim() || Number(row.grams) <= 0 || Number(row.price) <= 0);
+            if (invalid) { toast.error("Every custom weight needs a label, grams and positive price."); return; }
+          }
           if (!isPizza && !isCake && !form.price) { toast.error("Enter the food price."); return; }
           if (!editing && !form.image) { toast.error("Select a food image from your device."); return; }
           const positive=(value:any)=>Number(value)>0;
@@ -283,6 +293,7 @@ export function FoodsPage({ title, source = "admin" }: { title: string; source?:
             fd.append("cakeMessageEnabled", String(form.cakeMessageEnabled));
             fd.append("cakeMessageCharge", form.cakeMessageCharge || "0");
             fd.append("customWeightEnabled", String(form.customWeightEnabled));
+            fd.append("customWeightOptions", JSON.stringify(form.customWeightEnabled ? form.customWeightOptions.map((row:any)=>({label:row.label.trim(),grams:Number(row.grams),price:Number(row.price),active:true})) : []));
           } else {
             fd.append("basePrice", form.price);
           }
@@ -319,7 +330,7 @@ function ModalForm({ open, onClose, form, setForm, onSave, editing, saving = fal
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           <Field label="Title" value={form.title} onChange={(v:any)=>set("title", v)} />
           <Field label="Subtitle" value={form.subtitle} onChange={(v:any)=>set("subtitle", v)} />
-          <label className="block text-sm font-medium">Admin Category<select value={form.categoryId} onChange={(e)=>{ const c=categories.find((x:any)=>String(x.id)===e.target.value); setForm((v:any)=>({...v,categoryId:e.target.value,categoryName:c?.name??"",price:"",smallSizeExtra:"",mediumSizeExtra:"",largeSizeExtra:"",cake500gmExtra:"",cake1kgExtra:"",cake15kgExtra:"",cake2kgExtra:""})); }} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2"><option value="">Select category</option>{categories.map((c:any) => <option key={c.id} value={c.id}>{c.name}</option>)}</select><span className="mt-1 block text-xs text-muted-foreground">Only categories created by Admin are available.</span></label>
+          <label className="block text-sm font-medium">Admin Category<select value={form.categoryId} onChange={(e)=>{ const c=categories.find((x:any)=>String(x.id)===e.target.value); setForm((v:any)=>({...v,categoryId:e.target.value,categoryName:c?.name??"",price:"",smallSizeExtra:"",mediumSizeExtra:"",largeSizeExtra:"",cake500gmExtra:"",cake1kgExtra:"",cake15kgExtra:"",cake2kgExtra:"",customWeightEnabled:false,customWeightOptions:[]})); }} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2"><option value="">Select category</option>{categories.map((c:any) => <option key={c.id} value={c.id}>{c.name}</option>)}</select><span className="mt-1 block text-xs text-muted-foreground">Only categories created by Admin are available.</span></label>
           <label className="block text-sm font-medium">Cuisine<select value={form.cuisineId} onChange={(e)=>{const c=cuisines.find((x:any)=>String(x.id)===e.target.value);setForm((v:any)=>({...v,cuisineId:e.target.value,cuisineName:c?.name??""}));}} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2"><option value="">Select cuisine</option>{cuisines.map((c:any)=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
           <label className="block text-sm font-medium">Brand (optional)<select value={form.brandId} onChange={(e)=>{const b=brands.find((x:any)=>String(x.id)===e.target.value);setForm((v:any)=>({...v,brandId:e.target.value,brandName:b?.name??""}));}} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2"><option value="">No brand</option>{brands.map((b:any)=><option key={b.id} value={b.id}>{b.name}</option>)}</select><span className="mt-1 block text-xs text-muted-foreground">Brand products appear under this brand in the customer app.</span></label>
           <label className="block text-sm font-medium">Food Type<select value={form.isVeg ? "VEG" : "NON_VEG"} onChange={(e)=>set("isVeg",e.target.value==="VEG")} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2"><option value="VEG">Veg</option><option value="NON_VEG">Non-Veg</option></select></label>
@@ -337,6 +348,20 @@ function ModalForm({ open, onClose, form, setForm, onSave, editing, saving = fal
             <Field label="2kg Price (₹)" type="number" value={form.cake2kgExtra} onChange={(v:any)=>set("cake2kgExtra", v)} />
             <Field label="Cake Message Charge (₹)" type="number" value={form.cakeMessageCharge} onChange={(v:any)=>set("cakeMessageCharge", v)} />
           </>}
+          {isCake && form.customWeightEnabled && <div className="md:col-span-2 xl:col-span-3 rounded-2xl border border-primary/20 bg-primary/5 p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div><p className="font-semibold">Custom cake weights</p><p className="text-xs text-muted-foreground">Add any extra weight and its absolute selling price.</p></div>
+              <button type="button" onClick={()=>set("customWeightOptions", [...form.customWeightOptions,{label:"",grams:"",price:""}])} className="rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground">+ Add weight</button>
+            </div>
+            <div className="space-y-3">
+              {form.customWeightOptions.map((row:any,index:number)=><div key={index} className="grid gap-2 rounded-xl border border-border bg-background p-3 sm:grid-cols-[1.2fr_1fr_1fr_auto]">
+                <Field label="Display label" value={row.label} onChange={(v:any)=>set("customWeightOptions",form.customWeightOptions.map((x:any,i:number)=>i===index?{...x,label:v}:x))}/>
+                <Field label="Weight (grams)" type="number" value={row.grams} onChange={(v:any)=>set("customWeightOptions",form.customWeightOptions.map((x:any,i:number)=>i===index?{...x,grams:v}:x))}/>
+                <Field label="Price (₹)" type="number" value={row.price} onChange={(v:any)=>set("customWeightOptions",form.customWeightOptions.map((x:any,i:number)=>i===index?{...x,price:v}:x))}/>
+                <button type="button" onClick={()=>set("customWeightOptions",form.customWeightOptions.filter((_:any,i:number)=>i!==index))} className="self-end rounded-xl border border-destructive/30 px-3 py-2 text-sm font-semibold text-destructive">Remove</button>
+              </div>)}
+            </div>
+          </div>}
           <label className="block text-sm font-medium">Food image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif" onChange={(e:any) => { const file=e.target.files?.[0] ?? null; if(file && file.size > 8*1024*1024){ toast.error("Choose an image smaller than 8 MB."); e.target.value=""; return; } set("image", file); }} className="mt-1 min-h-11 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm" /><span className="mt-1 block text-xs text-muted-foreground">JPG, PNG, WebP, GIF, AVIF or HEIC · maximum 8 MB</span></label>
         </div>
         {(isPizza || isCake) && <div className="mt-3 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm"><strong>{isPizza ? "Pizza size pricing" : "Cake weight pricing"}</strong><div className="mt-1 text-muted-foreground">{isPizza ? "Customer sees Small, Medium and Large. Small is selected by default." : "Customer sees 500gm, 1kg, 1.5kg and 2kg. 500gm is selected by default."}</div></div>}
