@@ -21,6 +21,16 @@ const EMAIL_PATHS = ["/admin/account/email", "/admin/profile/email", "/admin/cha
 const PASSWORD_PATHS = ["/admin/account/password", "/admin/profile/password", "/admin/change-password"];
 
 export const accountService = {
+  forgotPassword: (email: string) => request<any>({
+    url: "/admin/auth/forgot-password",
+    method: "POST",
+    data: { email },
+  }),
+  resetPassword: (data: { email: string; code?: string; recoveryKey?: string; newPassword: string; confirmPassword: string }) => request<any>({
+    url: "/admin/auth/reset-password",
+    method: "POST",
+    data,
+  }),
   profile: () => requestFallback<any>(PROFILE_PATHS, { method: "GET" }),
   updateProfile: (data: any) => requestFallback<any>(PROFILE_PATHS, { method: "PUT", data }),
   updateGstin: (data: any) => requestFallback<any>(["/admin/account/profile/gstin", "/admin/profile/gstin"], { method: "PATCH", data }),

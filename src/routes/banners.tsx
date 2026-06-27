@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/admin/page-header";
 import {
   Image as ImageIcon, Plus, Pencil, Trash2, ChevronLeft, ChevronRight,
@@ -12,6 +12,7 @@ import { useCoupons } from "@/hooks/queries/use-coupons";
 import { useRestaurants } from "@/hooks/queries/use-restaurants";
 import type { BannerRequest, BannerResponse, Coupon } from "@/types";
 import { haptic } from "@/lib/haptics";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/banners")({
   head: () => ({ meta: [{ title: "Banners | Mr. Breado Admin" }] }),
@@ -120,18 +121,38 @@ function BannerDialog({ banner, coupons, outlets, isNew, submitting, onClose, on
     outletIds: (banner.outletIds || []).map(String), imageFile: null,
   });
   const preview = useMemo(() => form.imageFile ? URL.createObjectURL(form.imageFile) : form.image || "", [form.imageFile, form.image]);
+  useEffect(() => () => {
+    if (form.imageFile && preview.startsWith("blob:")) URL.revokeObjectURL(preview);
+  }, [form.imageFile, preview]);
+
   const selectedIds = (form.outletIds || []).map(String);
   const invalidScope = !form.appliesToAllOutlets && selectedIds.length === 0;
   const invalidDates = !!form.startsAt && !!form.endsAt && new Date(form.startsAt) >= new Date(form.endsAt);
+  const invalidRemoteImage = !!form.image?.trim() && !/^https:\/\//i.test(form.image.trim());
 
-  return <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 p-4 backdrop-blur-sm">
-    <div className="mx-auto my-4 w-full max-w-3xl rounded-3xl border bg-card p-5 shadow-2xl sm:p-7">
-      <div className="mb-5 flex items-start justify-between"><div><h2 className="text-2xl font-black">{isNew ? "Create banner" : "Edit banner"}</h2><p className="text-sm text-muted-foreground">Image, schedule, coupon and outlet eligibility are stored in the backend.</p></div><button onClick={onClose} className="rounded-xl border px-3 py-2">Close</button></div>
+  const selectImage = (file: File | null) => {
+    if (!file) return;
+    const supported = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "image/avif", "image/heic", "image/heif"].includes(file.type.toLowerCase()) || /\.(jpe?g|png|webp|gif|avif|heic|heif)$/i.test(file.name);
+    if (!supported) {
+      toast.error("Choose a JPG, PNG, WebP, GIF, AVIF, HEIC, or HEIF image.");
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error("The selected image is larger than 8 MB.");
+      return;
+    }
+    haptic();
+    setForm({ ...form, imageFile: file });
+  };
+
+  return <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 p-0 backdrop-blur-md sm:p-4">
+    <div className="mx-auto mt-[max(4rem,env(safe-area-inset-top))] min-h-[calc(100dvh-4rem)] w-full rounded-t-[28px] border bg-card p-4 shadow-2xl sm:my-4 sm:min-h-0 sm:max-w-3xl sm:rounded-3xl sm:p-7">
+      <div className="mb-5 flex items-start justify-between"><div><h2 className="text-2xl font-black">{isNew ? "Create banner" : "Edit banner"}</h2><p className="text-sm text-muted-foreground">Image, schedule, coupon and outlet eligibility are stored in the backend.</p></div><button disabled={submitting} onClick={() => { haptic(); onClose(); }} className="min-h-11 rounded-xl border px-3 py-2 font-bold transition hover:bg-accent disabled:opacity-50">Close</button></div>
       <div className="grid gap-5 lg:grid-cols-[1fr_1.2fr]">
         <div className="space-y-3">
           <div className="overflow-hidden rounded-2xl border bg-muted"><div className="h-48">{preview ? <img src={preview} className="h-full w-full object-cover" alt="Banner preview" /> : <div className="grid h-full place-items-center text-muted-foreground"><Upload className="h-10 w-10" /></div>}</div></div>
-          <label className="block text-sm font-bold">Upload image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => setForm({ ...form, imageFile: event.target.files?.[0] || null })} className="mt-1 w-full rounded-xl border p-2 text-sm" /></label>
-          <label className="block text-sm font-bold">Or image URL<input value={form.image || ""} onChange={(event) => setForm({ ...form, image: event.target.value })} className="mt-1 w-full rounded-xl border bg-background px-3 py-2" /></label>
+          <label className="block text-sm font-bold">Upload image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.gif,.avif,.heic,.heif" onChange={(event) => selectImage(event.target.files?.[0] || null)} className="mt-1 min-h-12 w-full rounded-xl border p-2 text-base sm:text-sm" /><span className="mt-1 block text-xs font-normal text-muted-foreground">JPG, PNG, WebP, GIF, AVIF, HEIC or HEIF · maximum 8 MB</span></label>
+          <label className="block text-sm font-bold">Or image URL<input value={form.image || ""} onChange={(event) => setForm({ ...form, image: event.target.value })} inputMode="url" className="mt-1 min-h-12 w-full rounded-xl border bg-background px-3 py-2 text-base sm:text-sm" />{invalidRemoteImage && <span className="mt-1 block text-xs font-bold text-destructive">Use a secure HTTPS image URL.</span>}</label>
         </div>
         <div className="space-y-3">
           <label className="block text-sm font-bold">Title<input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} className="mt-1 w-full rounded-xl border bg-background px-3 py-2" /></label>
@@ -141,12 +162,12 @@ function BannerDialog({ banner, coupons, outlets, isNew, submitting, onClose, on
           <div className="grid gap-3 sm:grid-cols-2"><label className="block text-sm font-bold">Starts<input type="datetime-local" value={form.startsAt ? form.startsAt.slice(0, 16) : ""} onChange={(event) => setForm({ ...form, startsAt: event.target.value ? new Date(event.target.value).toISOString() : undefined })} className="mt-1 w-full rounded-xl border bg-background px-3 py-2" /></label><label className="block text-sm font-bold">Ends<input type="datetime-local" value={form.endsAt ? form.endsAt.slice(0, 16) : ""} onChange={(event) => setForm({ ...form, endsAt: event.target.value ? new Date(event.target.value).toISOString() : undefined })} className="mt-1 w-full rounded-xl border bg-background px-3 py-2" /></label></div>
           {invalidDates && <p className="text-sm font-bold text-destructive">End time must be later than start time.</p>}
           <label className="flex items-center gap-2 rounded-xl border p-3 text-sm font-bold"><input type="checkbox" checked={!!form.appliesToAllOutlets} onChange={(event) => setForm({ ...form, appliesToAllOutlets: event.target.checked, outletIds: event.target.checked ? [] : form.outletIds })} />Available at every outlet</label>
-          {!form.appliesToAllOutlets && <div className="max-h-44 space-y-2 overflow-y-auto rounded-xl border p-3">{outlets.map((outlet) => { const id = String(outlet.id || outlet._id); const checked = selectedIds.includes(id); return <label key={id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={checked} onChange={(event) => setForm({ ...form, outletIds: event.target.checked ? [...selectedIds, id] : selectedIds.filter((value) => value !== id) })} /><span>{outlet.name || outlet.outletName || "Outlet"}</span></label>; })}</div>}
+          {!form.appliesToAllOutlets && <div className="max-h-44 space-y-2 overflow-y-auto rounded-xl border p-3">{outlets.map((outlet) => { const id = String(outlet.mongoId || outlet._id || outlet.id); const checked = selectedIds.includes(id); return <label key={id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={checked} onChange={(event) => setForm({ ...form, outletIds: event.target.checked ? [...selectedIds, id] : selectedIds.filter((value) => value !== id) })} /><span>{outlet.name || outlet.outletName || "Outlet"}</span></label>; })}</div>}
           {invalidScope && <p className="text-sm font-bold text-destructive">Choose one or more outlets.</p>}
           <div className="flex flex-wrap gap-4"><label className="flex items-center gap-2 text-sm font-bold"><input type="checkbox" checked={!!form.enabled} onChange={(event) => setForm({ ...form, enabled: event.target.checked })} />Active</label><label className="flex items-center gap-2 text-sm font-bold">Priority<input type="number" value={Number(form.priority || 0)} onChange={(event) => setForm({ ...form, priority: Number(event.target.value) })} className="w-24 rounded-lg border bg-background px-2 py-1" /></label></div>
         </div>
       </div>
-      <div className="mt-6 flex justify-end gap-2"><button onClick={onClose} className="rounded-xl border px-4 py-2">Cancel</button><button disabled={submitting || !form.title.trim() || (!form.imageFile && !form.image?.trim()) || invalidScope || invalidDates} onClick={() => onSubmit(form)} className="inline-flex items-center gap-2 rounded-xl gradient-primary px-5 py-2 font-black text-primary-foreground disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}Save banner</button></div>
+      <div className="sticky bottom-0 -mx-4 mt-6 flex justify-end gap-2 border-t bg-card/95 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0"><button disabled={submitting} onClick={() => { haptic(); onClose(); }} className="min-h-11 rounded-xl border px-4 py-2 font-bold transition hover:bg-accent disabled:opacity-50">Cancel</button><button disabled={submitting || !form.title.trim() || (!form.imageFile && !form.image?.trim()) || invalidRemoteImage || invalidScope || invalidDates} onClick={() => { haptic([18, 20, 18]); onSubmit(form); }} className="inline-flex items-center gap-2 rounded-xl gradient-primary px-5 py-2 font-black text-primary-foreground disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}Save banner</button></div>
     </div>
   </div>;
 }

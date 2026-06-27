@@ -17,6 +17,7 @@ export interface CategoryResponse {
   enabled?: boolean;
   active?: boolean;
   createdAt?: string;
+  imageFile?: File | null;
 }
 
 export interface CategorySummaryResponse {
@@ -25,7 +26,6 @@ export interface CategorySummaryResponse {
   inactiveCategories: number;
   totalSubCategories: number;
 }
-
 
 function imageString(value: unknown): string {
   if (typeof value === "string") return value;
@@ -37,7 +37,9 @@ function imageString(value: unknown): string {
 }
 
 function normalizeCategory(row: any): CategoryResponse {
-  const image = imageString(row?.imageUrl ?? row?.image ?? row?.icon ?? row?.banner);
+  const image = imageString(
+    row?.imageUrl ?? row?.image ?? row?.icon ?? row?.banner,
+  );
   return {
     ...row,
     id: String(row?.id ?? row?._id ?? ""),
@@ -52,29 +54,58 @@ function normalizeCategory(row: any): CategoryResponse {
   };
 }
 
-async function normalizePage(promise: Promise<any>): Promise<PageResponse<CategoryResponse>> {
+async function normalizePage(
+  promise: Promise<any>,
+): Promise<PageResponse<CategoryResponse>> {
   const data = await promise;
-  const rows = Array.isArray(data) ? data : (data?.items ?? data?.categories ?? []);
-  return { ...data, items: rows.map(normalizeCategory), total: data?.total ?? rows.length } as PageResponse<CategoryResponse>;
+  const rows = Array.isArray(data)
+    ? data
+    : (data?.items ?? data?.categories ?? []);
+  return {
+    ...data,
+    items: rows.map(normalizeCategory),
+    total: data?.total ?? rows.length,
+  } as PageResponse<CategoryResponse>;
 }
 
-function normalizeCategoryPayload(payload: Partial<CategoryResponse>) {
-  const imageValue = imageString(payload.imageUrl ?? payload.image ?? payload.icon ?? payload.banner);
+function normalizeCategoryPayload(
+  payload: Partial<CategoryResponse>,
+): Partial<CategoryResponse> | FormData {
+  if (payload.imageFile instanceof File) {
+    const form = new FormData();
+    Object.entries(payload).forEach(([key, value]) => {
+      if (key === "imageFile" || value === undefined || value === null) return;
+      if (typeof value === "object") {
+        const image = imageString(value);
+        if (image) form.append(key, image);
+        return;
+      }
+      form.append(key, String(value));
+    });
+    form.append("image", payload.imageFile);
+    return form;
+  }
+  const imageValue = imageString(
+    payload.imageUrl ?? payload.image ?? payload.icon ?? payload.banner,
+  );
   return {
     ...payload,
     name: payload.name ?? payload.title,
-    image: typeof imageValue === "string" && imageValue ? { url: imageValue } : imageValue,
+    image: imageValue || undefined,
+    imageUrl: imageValue || undefined,
     active: payload.active ?? payload.enabled ?? payload.status === "ACTIVE",
   };
 }
 
 export const categoriesService = {
   list: (page = 1, perPage = 50) =>
-    normalizePage(request<PageResponse<CategoryResponse>>({
-      url: endpoints.admin.categories,
-      method: "GET",
-      params: { page, per_page: perPage, perPage },
-    })),
+    normalizePage(
+      request<PageResponse<CategoryResponse>>({
+        url: endpoints.admin.categories,
+        method: "GET",
+        params: { page, per_page: perPage, perPage },
+      }),
+    ),
 
   summary: () =>
     request<CategorySummaryResponse>({
@@ -83,18 +114,22 @@ export const categoriesService = {
     }),
 
   subCategories: (page = 1, perPage = 50) =>
-    normalizePage(request<PageResponse<CategoryResponse>>({
-      url: endpoints.admin.publicSubCategories,
-      method: "GET",
-      params: { page, per_page: perPage, perPage },
-    })),
+    normalizePage(
+      request<PageResponse<CategoryResponse>>({
+        url: endpoints.admin.publicSubCategories,
+        method: "GET",
+        params: { page, per_page: perPage, perPage },
+      }),
+    ),
 
   foodCategories: (page = 1, perPage = 50) =>
-    normalizePage(request<PageResponse<CategoryResponse>>({
-      url: endpoints.admin.foodCategoriesAdmin,
-      method: "GET",
-      params: { page, per_page: perPage, perPage },
-    })),
+    normalizePage(
+      request<PageResponse<CategoryResponse>>({
+        url: endpoints.admin.foodCategoriesAdmin,
+        method: "GET",
+        params: { page, per_page: perPage, perPage },
+      }),
+    ),
 
   create: (payload: Partial<CategoryResponse>) =>
     request<CategoryResponse>({
@@ -120,6 +155,10 @@ export const categoriesService = {
     request<CategoryResponse>({
       url: endpoints.admin.categoryStatus(id),
       method: "PATCH",
-      data: { status, active: status === "ACTIVE", enabled: status === "ACTIVE" },
+      data: {
+        status,
+        active: status === "ACTIVE",
+        enabled: status === "ACTIVE",
+      },
     }),
 };

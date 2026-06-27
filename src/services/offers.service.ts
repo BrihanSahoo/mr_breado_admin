@@ -15,12 +15,32 @@ export const offersService = {
       params: { page: params.page ?? 1, perPage: params.perPage ?? 20 },
     }),
   create: (body: OfferRequest & { imageFile?: File }) => {
-    const fd = new FormData(); Object.entries(body as any).forEach(([k,v]) => { if (k === "imageFile" && v instanceof File) fd.append("image", v); else if (Array.isArray(v)) fd.append(k, JSON.stringify(v)); else if (v !== undefined && v !== null) fd.append(k, String(v)); });
-    return request<OfferResponse>({ url: endpoints.admin.offers, method: "POST", data: fd });
+    const fd = new FormData();
+    Object.entries(body as any).forEach(([k, v]) => {
+      if (k === "imageFile" && v instanceof File) fd.append("image", v);
+      else if (body.imageFile instanceof File && k === "imageUrl") return;
+      else if (Array.isArray(v)) fd.append(k, JSON.stringify(v));
+      else if (v !== undefined && v !== null) fd.append(k, String(v));
+    });
+    return request<OfferResponse>({
+      url: endpoints.admin.offers,
+      method: "POST",
+      data: fd,
+    });
   },
   update: (id: number | string, body: OfferRequest & { imageFile?: File }) => {
-    const fd = new FormData(); Object.entries(body as any).forEach(([k,v]) => { if (k === "imageFile" && v instanceof File) fd.append("image", v); else if (Array.isArray(v)) fd.append(k, JSON.stringify(v)); else if (v !== undefined && v !== null) fd.append(k, String(v)); });
-    return request<OfferResponse>({ url: endpoints.admin.offerById(id), method: "PUT", data: fd });
+    const fd = new FormData();
+    Object.entries(body as any).forEach(([k, v]) => {
+      if (k === "imageFile" && v instanceof File) fd.append("image", v);
+      else if (body.imageFile instanceof File && k === "imageUrl") return;
+      else if (Array.isArray(v)) fd.append(k, JSON.stringify(v));
+      else if (v !== undefined && v !== null) fd.append(k, String(v));
+    });
+    return request<OfferResponse>({
+      url: endpoints.admin.offerById(id),
+      method: "PUT",
+      data: fd,
+    });
   },
   remove: (id: number | string) =>
     request<void>({
