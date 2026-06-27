@@ -9,6 +9,7 @@ import { api } from "@/api/client";
 import { useProducts } from "@/hooks/queries/use-products";
 import { productsService } from "@/services/products.service";
 import { apiErrorMessage } from "@/lib/api-error";
+import { haptic } from "@/lib/haptics";
 import {
   useDeleteProduct,
   useToggleProductAvailability,
@@ -255,7 +256,7 @@ export function FoodsPage({ title, source = "admin" }: { title: string; source?:
           if (!form.categoryId) { toast.error("Select an Admin-created category."); return; }
           if (!form.cuisineId) { toast.error("Select a cuisine."); return; }
           if (isPizza && (!form.smallSizeExtra || !form.mediumSizeExtra || !form.largeSizeExtra)) { toast.error("Enter Small, Medium and Large pizza prices."); return; }
-          if (isCake && (!form.cake500gmExtra || !form.cake1kgExtra || !form.cake15kgExtra || !form.cake2kgExtra)) { toast.error("Enter all cake prices from 500gm to 2kg."); return; }
+          if (isCake && !form.customWeightEnabled && (!form.cake500gmExtra || !form.cake1kgExtra || !form.cake15kgExtra || !form.cake2kgExtra)) { toast.error("Enter all standard cake prices from 500gm to 2kg."); return; }
           if (isCake && form.customWeightEnabled) {
             if (!form.customWeightOptions.length) { toast.error("Add at least one custom cake weight."); return; }
             const invalid = form.customWeightOptions.some((row:any) => !row.label.trim() || Number(row.grams) <= 0 || Number(row.price) <= 0);
@@ -264,7 +265,8 @@ export function FoodsPage({ title, source = "admin" }: { title: string; source?:
           if (!isPizza && !isCake && !form.price) { toast.error("Enter the food price."); return; }
           if (!editing && !form.image) { toast.error("Select a food image from your device."); return; }
           const positive=(value:any)=>Number(value)>0;
-          if (form.discountPrice && (!positive(form.discountPrice) || Number(form.discountPrice)>=Number(isPizza?form.smallSizeExtra:isCake?form.cake500gmExtra:form.price))) { toast.error("Offer price must be positive and lower than the base price."); return; }
+          const cakeBasePrice = form.customWeightEnabled ? Number(form.customWeightOptions?.[0]?.price || 0) : Number(form.cake500gmExtra || 0);
+          if (form.discountPrice && (!positive(form.discountPrice) || Number(form.discountPrice)>=Number(isPizza?form.smallSizeExtra:isCake?cakeBasePrice:form.price))) { toast.error("Offer price must be positive and lower than the base price."); return; }
           const fd = new FormData();
           fd.append("name", form.title.trim());
           fd.append("title", form.title.trim());
@@ -285,11 +287,15 @@ export function FoodsPage({ title, source = "admin" }: { title: string; source?:
             fd.append("largeSizePrice", form.largeSizeExtra);
             fd.append("basePrice", form.smallSizeExtra);
           } else if (isCake) {
-            fd.append("cake500gmPrice", form.cake500gmExtra);
-            fd.append("cake1kgPrice", form.cake1kgExtra);
-            fd.append("cake15kgPrice", form.cake15kgExtra);
-            fd.append("cake2kgPrice", form.cake2kgExtra);
-            fd.append("basePrice", form.cake500gmExtra);
+            if (!form.customWeightEnabled) {
+              fd.append("cake500gmPrice", form.cake500gmExtra);
+              fd.append("cake1kgPrice", form.cake1kgExtra);
+              fd.append("cake15kgPrice", form.cake15kgExtra);
+              fd.append("cake2kgPrice", form.cake2kgExtra);
+              fd.append("basePrice", form.cake500gmExtra);
+            } else {
+              fd.append("basePrice", String(form.customWeightOptions?.[0]?.price || 0));
+            }
             fd.append("cakeMessageEnabled", String(form.cakeMessageEnabled));
             fd.append("cakeMessageCharge", form.cakeMessageCharge || "0");
             fd.append("customWeightEnabled", String(form.customWeightEnabled));
@@ -342,36 +348,65 @@ function ModalForm({ open, onClose, form, setForm, onSave, editing, saving = fal
             <Field label="Large Price (₹)" type="number" value={form.largeSizeExtra} onChange={(v:any)=>set("largeSizeExtra", v)} />
           </>}
           {isCake && <>
-            <Field label="500gm Price (₹) — Default" type="number" value={form.cake500gmExtra} onChange={(v:any)=>set("cake500gmExtra", v)} />
-            <Field label="1kg Price (₹)" type="number" value={form.cake1kgExtra} onChange={(v:any)=>set("cake1kgExtra", v)} />
-            <Field label="1.5kg Price (₹)" type="number" value={form.cake15kgExtra} onChange={(v:any)=>set("cake15kgExtra", v)} />
-            <Field label="2kg Price (₹)" type="number" value={form.cake2kgExtra} onChange={(v:any)=>set("cake2kgExtra", v)} />
+            <div className="md:col-span-2 xl:col-span-3 rounded-2xl border border-primary/20 bg-primary/5 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-black">Cake weight mode</p>
+                  <p className="text-xs text-muted-foreground">Choose either the standard 500gm–2kg pricing set or fully custom weights.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    haptic([18, 22, 18]);
+                    setForm((current:any) => {
+                      const enabled = !current.customWeightEnabled;
+                      return {
+                        ...current,
+                        customWeightEnabled: enabled,
+                        customWeightOptions: enabled && !current.customWeightOptions.length
+                          ? [{ label: "", grams: "", price: "" }]
+                          : current.customWeightOptions,
+                      };
+                    });
+                  }}
+                  className={`inline-flex min-h-11 items-center justify-center rounded-xl border px-4 py-2 text-sm font-black transition ${form.customWeightEnabled ? "border-primary bg-primary text-primary-foreground shadow-glow" : "border-border bg-background hover:bg-accent"}`}
+                >
+                  {form.customWeightEnabled ? "Custom weights enabled" : "Use custom weights"}
+                </button>
+              </div>
+            </div>
+            {!form.customWeightEnabled && <>
+              <Field label="500gm Price (₹) — Default" type="number" value={form.cake500gmExtra} onChange={(v:any)=>set("cake500gmExtra", v)} />
+              <Field label="1kg Price (₹)" type="number" value={form.cake1kgExtra} onChange={(v:any)=>set("cake1kgExtra", v)} />
+              <Field label="1.5kg Price (₹)" type="number" value={form.cake15kgExtra} onChange={(v:any)=>set("cake15kgExtra", v)} />
+              <Field label="2kg Price (₹)" type="number" value={form.cake2kgExtra} onChange={(v:any)=>set("cake2kgExtra", v)} />
+            </>}
             <Field label="Cake Message Charge (₹)" type="number" value={form.cakeMessageCharge} onChange={(v:any)=>set("cakeMessageCharge", v)} />
           </>}
           {isCake && form.customWeightEnabled && <div className="md:col-span-2 xl:col-span-3 rounded-2xl border border-primary/20 bg-primary/5 p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div><p className="font-semibold">Custom cake weights</p><p className="text-xs text-muted-foreground">Add any extra weight and its absolute selling price.</p></div>
-              <button type="button" onClick={()=>set("customWeightOptions", [...form.customWeightOptions,{label:"",grams:"",price:""}])} className="rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground">+ Add weight</button>
+              <button type="button" onClick={()=>{haptic();set("customWeightOptions", [...form.customWeightOptions,{label:"",grams:"",price:""}]);}} className="rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground">+ Add weight</button>
             </div>
             <div className="space-y-3">
               {form.customWeightOptions.map((row:any,index:number)=><div key={index} className="grid gap-2 rounded-xl border border-border bg-background p-3 sm:grid-cols-[1.2fr_1fr_1fr_auto]">
                 <Field label="Display label" value={row.label} onChange={(v:any)=>set("customWeightOptions",form.customWeightOptions.map((x:any,i:number)=>i===index?{...x,label:v}:x))}/>
                 <Field label="Weight (grams)" type="number" value={row.grams} onChange={(v:any)=>set("customWeightOptions",form.customWeightOptions.map((x:any,i:number)=>i===index?{...x,grams:v}:x))}/>
                 <Field label="Price (₹)" type="number" value={row.price} onChange={(v:any)=>set("customWeightOptions",form.customWeightOptions.map((x:any,i:number)=>i===index?{...x,price:v}:x))}/>
-                <button type="button" onClick={()=>set("customWeightOptions",form.customWeightOptions.filter((_:any,i:number)=>i!==index))} className="self-end rounded-xl border border-destructive/30 px-3 py-2 text-sm font-semibold text-destructive">Remove</button>
+                <button type="button" onClick={()=>{haptic([14,18,14]);set("customWeightOptions",form.customWeightOptions.filter((_:any,i:number)=>i!==index));}} className="self-end rounded-xl border border-destructive/30 px-3 py-2 text-sm font-semibold text-destructive">Remove</button>
               </div>)}
             </div>
           </div>}
           <label className="block text-sm font-medium">Food image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif" onChange={(e:any) => { const file=e.target.files?.[0] ?? null; if(file && file.size > 8*1024*1024){ toast.error("Choose an image smaller than 8 MB."); e.target.value=""; return; } set("image", file); }} className="mt-1 min-h-11 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm" /><span className="mt-1 block text-xs text-muted-foreground">JPG, PNG, WebP, GIF, AVIF or HEIC · maximum 8 MB</span></label>
         </div>
-        {(isPizza || isCake) && <div className="mt-3 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm"><strong>{isPizza ? "Pizza size pricing" : "Cake weight pricing"}</strong><div className="mt-1 text-muted-foreground">{isPizza ? "Customer sees Small, Medium and Large. Small is selected by default." : "Customer sees 500gm, 1kg, 1.5kg and 2kg. 500gm is selected by default."}</div></div>}
+        {(isPizza || isCake) && <div className="mt-3 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm"><strong>{isPizza ? "Pizza size pricing" : "Cake weight pricing"}</strong><div className="mt-1 text-muted-foreground">{isPizza ? "Customer sees Small, Medium and Large. Small is selected by default." : "Customer sees the exact weight mode selected above. Standard and custom weight sets are never mixed."}</div></div>}
         <label className="mt-3 block text-sm font-medium">Description<textarea value={form.description} onChange={(e)=>set("description", e.target.value)} className="mt-1 min-h-24 w-full rounded-md border border-input px-3 py-2" /></label>
         <div className="mt-4 grid gap-2 md:grid-cols-3">
           <Toggle label="Veg" value={form.isVeg} onChange={(v:any)=>set("isVeg", v)} />
           <Toggle label="Available" value={form.isAvailable} onChange={(v:any)=>set("isAvailable", v)} />
           <Toggle label="Bestseller" value={form.isBestseller} onChange={(v:any)=>set("isBestseller", v)} />
           {isCake && <Toggle label="Cake Message" value={form.cakeMessageEnabled} onChange={(v:any)=>set("cakeMessageEnabled", v)} />}
-          {isCake && <Toggle label="Custom Weight" value={form.customWeightEnabled} onChange={(v:any)=>set("customWeightEnabled", v)} />}
+          
         </div>
         <div className="mt-5 flex justify-end gap-2">
           <button disabled={saving} onClick={onClose} className="min-h-11 rounded-xl border border-border px-5 py-2.5 text-sm font-semibold transition hover:bg-accent disabled:opacity-50">Cancel</button>
