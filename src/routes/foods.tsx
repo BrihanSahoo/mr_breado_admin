@@ -276,7 +276,7 @@ export function FoodsPage({ title, source = "admin" }: { title: string; source?:
           fd.append("categoryName", form.categoryName);
           fd.append("cuisineId", form.cuisineId);
           fd.append("cuisineName", form.cuisineName);
-          if(form.brandId) fd.append("brandId",form.brandId);
+          fd.append("brandId", form.brandId || "");
           fd.append("foodType", form.isVeg ? "VEG" : "NON_VEG");
           fd.append("active", String(form.isAvailable));
           fd.append("featured", String(form.isBestseller));
